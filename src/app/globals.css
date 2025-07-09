@@ -78,62 +78,261 @@ a {
   width: 8px;
 }
 
-/* AI BlockNote Styling */
-.bn-ai-toolbar-button {
-  background: linear-gradient(45deg, #007BFF, #0056b3) !important;
-  color: white !important;
-  border: none !important;
-  border-radius: 6px !important;
-  padding: 6px 12px !important;
-  font-weight: 600 !important;
-  transition: all 0.2s ease !important;
+/* Enhanced BlockNote Editor Styling */
+
+/* Smooth scrolling untuk editor */
+.bn-container {
+  height: 100%;
+  overflow-y: auto;
+  scroll-behavior: smooth;
 }
 
-.bn-ai-toolbar-button:hover {
-  background: linear-gradient(45deg, #0056b3, #004085) !important;
+.bn-editor {
+  min-height: 100%;
+  padding: 20px;
+  max-width: none;
+}
+
+/* Custom scrollbar */
+.bn-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.bn-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.bn-container::-webkit-scrollbar-thumb {
+  background: #c1c2c5;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.bn-container::-webkit-scrollbar-thumb:hover {
+  background: #868e96;
+}
+
+[data-mantine-color-scheme="dark"] .bn-container::-webkit-scrollbar-thumb {
+  background: #5c5f66;
+}
+
+[data-mantine-color-scheme="dark"] .bn-container::-webkit-scrollbar-thumb:hover {
+  background: #6c737a;
+}
+
+/* BlockNote content styling */
+.bn-block-content {
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+/* Paragraph spacing */
+.bn-block-content p {
+  margin-bottom: 0.5em;
+}
+
+/* Heading spacing */
+.bn-block-content h1,
+.bn-block-content h2,
+.bn-block-content h3 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+}
+
+/* Block hover effects */
+.bn-block:hover .bn-block-handle {
+  opacity: 1;
+}
+
+.bn-block-handle {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Slash menu styling */
+.bn-suggestion-menu {
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+  overflow: hidden;
+}
+
+[data-mantine-color-scheme="dark"] .bn-suggestion-menu {
+  border-color: #373a40;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.bn-suggestion-menu-item {
+  padding: 12px 16px;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  margin: 4px;
+}
+
+.bn-suggestion-menu-item:hover {
+  background: #f8f9fa;
+  transform: translateX(4px);
+}
+
+[data-mantine-color-scheme="dark"] .bn-suggestion-menu-item:hover {
+  background: #2e3036;
+}
+
+/* AI suggestion menu items */
+.bn-suggestion-menu-item[data-group="AI Assistant"] {
+  background: linear-gradient(135deg, #e7f3ff 0%, #f0f9ff 100%);
+  border-left: 3px solid #007BFF;
+}
+
+[data-mantine-color-scheme="dark"] .bn-suggestion-menu-item[data-group="AI Assistant"] {
+  background: linear-gradient(135deg, #1a2332 0%, #1e2836 100%);
+}
+
+/* Formatting toolbar */
+.bn-formatting-toolbar {
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+[data-mantine-color-scheme="dark"] .bn-formatting-toolbar {
+  background: rgba(26, 26, 26, 0.95);
+  border-color: #373a40;
+}
+
+/* Toolbar buttons */
+.bn-toolbar-button {
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.bn-toolbar-button:hover {
+  background: #f8f9fa;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3) !important;
 }
 
-/* AI Menu Styling */
-.bn-ai-menu {
-  border: 1px solid #007BFF !important;
-  border-radius: 8px !important;
-  box-shadow: 0 4px 20px rgba(0, 123, 255, 0.15) !important;
+[data-mantine-color-scheme="dark"] .bn-toolbar-button:hover {
+  background: #2e3036;
 }
 
-/* AI Streaming Indicator */
-.bn-ai-streaming {
-  border-left: 3px solid #007BFF !important;
-  background: rgba(0, 123, 255, 0.05) !important;
-  animation: pulse 2s infinite;
+/* Block selection */
+.bn-block-selected {
+  background: rgba(0, 123, 255, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid #007BFF;
+  padding-left: 12px;
 }
 
-@keyframes pulse {
-  0% {
-    background: rgba(0, 123, 255, 0.05);
+/* Placeholder styling */
+.bn-block-content[data-is-empty="true"]::before {
+  color: #adb5bd;
+  font-style: italic;
+}
+
+[data-mantine-color-scheme="dark"] .bn-block-content[data-is-empty="true"]::before {
+  color: #6c757d;
+}
+
+/* Modal enhancements */
+.mantine-Modal-content {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.mantine-Modal-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+[data-mantine-color-scheme="dark"] .mantine-Modal-header {
+  border-bottom-color: #373a40;
+}
+
+/* AI Template Cards */
+.ai-template-card {
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-template-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(0, 123, 255, 0.15);
+}
+
+.ai-template-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #007BFF, #40c057, #fd7e14, #9775fa, #e64980);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.ai-template-card:hover::before {
+  opacity: 1;
+}
+
+/* Button enhancements */
+.mantine-Button-root {
+  transition: all 0.2s ease;
+}
+
+.mantine-Button-root:hover {
+  transform: translateY(-1px);
+}
+
+/* Gradient button special effects */
+.mantine-Button-root[data-variant="gradient"] {
+  position: relative;
+  overflow: hidden;
+}
+
+.mantine-Button-root[data-variant="gradient"]:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
+}
+
+/* Status bar enhancements */
+.editor-status-bar {
+  backdrop-filter: blur(10px);
+  border-radius: 12px 12px 0 0;
+}
+
+/* Loading animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 123, 255, 0.3);
   }
   50% {
-    background: rgba(0, 123, 255, 0.1);
-  }
-  100% {
-    background: rgba(0, 123, 255, 0.05);
+    box-shadow: 0 0 30px rgba(0, 123, 255, 0.6);
   }
 }
 
-/* AI Suggestions */
-.bn-ai-suggestion {
-  border: 1px dashed #007BFF !important;
-  border-radius: 4px !important;
-  background: rgba(0, 123, 255, 0.03) !important;
+.ai-loading {
+  animation: pulse-glow 2s ease-in-out infinite;
 }
 
-/* Dark theme AI styling */
-[data-mantine-color-scheme="dark"] .bn-ai-toolbar-button {
-  background: linear-gradient(45deg, #0d6efd, #0b5ed7) !important;
-}
-
-[data-mantine-color-scheme="dark"] .bn-ai-menu {
-  background: #1a1a1a !important;
-  border-color: #0d6efd !important;
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .bn-editor {
+    padding: 12px;
+  }
+  
+  .bn-suggestion-menu {
+    margin: 0 8px;
+  }
+  
+  .ai-template-card {
+    min-width: 120px;
+  }
 }
