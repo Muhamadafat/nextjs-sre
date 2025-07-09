@@ -77,3 +77,63 @@ a {
   cursor: col-resize;
   width: 8px;
 }
+
+/* AI BlockNote Styling */
+.bn-ai-toolbar-button {
+  background: linear-gradient(45deg, #007BFF, #0056b3) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 6px 12px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.bn-ai-toolbar-button:hover {
+  background: linear-gradient(45deg, #0056b3, #004085) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3) !important;
+}
+
+/* AI Menu Styling */
+.bn-ai-menu {
+  border: 1px solid #007BFF !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 20px rgba(0, 123, 255, 0.15) !important;
+}
+
+/* AI Streaming Indicator */
+.bn-ai-streaming {
+  border-left: 3px solid #007BFF !important;
+  background: rgba(0, 123, 255, 0.05) !important;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    background: rgba(0, 123, 255, 0.05);
+  }
+  50% {
+    background: rgba(0, 123, 255, 0.1);
+  }
+  100% {
+    background: rgba(0, 123, 255, 0.05);
+  }
+}
+
+/* AI Suggestions */
+.bn-ai-suggestion {
+  border: 1px dashed #007BFF !important;
+  border-radius: 4px !important;
+  background: rgba(0, 123, 255, 0.03) !important;
+}
+
+/* Dark theme AI styling */
+[data-mantine-color-scheme="dark"] .bn-ai-toolbar-button {
+  background: linear-gradient(45deg, #0d6efd, #0b5ed7) !important;
+}
+
+[data-mantine-color-scheme="dark"] .bn-ai-menu {
+  background: #1a1a1a !important;
+  border-color: #0d6efd !important;
+}
