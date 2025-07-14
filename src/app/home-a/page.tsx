@@ -2,12 +2,12 @@
 
 import { ActionIcon, AppShell, Avatar, Box, Burger, Button, Container, Flex, Group, Image, ScrollArea, Stack, Text, TextInput, ThemeIcon, Title, useComputedColorScheme, useMantineColorScheme } from '@mantine/core';
 
+import BlockNoteEditorComponent from '@/components/BlockNoteEditor'; // Fixed: menggunakan alias @/ yang lebih standar
 import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { IconBrain, IconFilePlus, IconGraph, IconMessageCircle2, IconMoon, IconSend, IconSettings, IconSun, IconUpload } from '@tabler/icons-react';
 import NextImage from 'next/image';
 import { useState } from 'react';
 import Split from 'react-split';
-import BlockNoteEditorComponent from '../../components/BlockNoteEditor';
 import knowledgeImage from '../imageCollection/graph.png';
 import myimage from '../imageCollection/LogoSRE_Fix.png';
 
@@ -84,7 +84,8 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('knowledge');
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [fileName, setFileName] = useState('Judul Artikel 1');
-  const [headings, setHeadings] = useState<Array<{ id: string; text: string }>>([]);
+  // Enhanced headings state dengan level
+  const [headings, setHeadings] = useState<Array<{ id: string; text: string; level: number }>>([]);
   const [chatInput, setChatInput] = useState('');
   const [messages, setMessages] = useState<string[]>([]);
   const [editorContent, setEditorContent] = useState<any[]>([]);
@@ -95,23 +96,57 @@ export default function Home() {
     setChatInput('');
   };
 
+  // Enhanced handleContentChange untuk extract heading dengan level dan auto-update/reset title
   const handleContentChange = (content: any[]) => {
     setEditorContent(content);
 
-    // Extract headings from BlockNote content
-    const extractedHeadings: { id: string; text: string }[] = [];
+    // Extract headings from BlockNote content dengan level
+    const extractedHeadings: { id: string; text: string; level: number }[] = [];
+    let firstH1Title = '';
+    let hasAnyContent = false;
+    
     content.forEach((block) => {
+      // Check if ada content apapun
+      if (block.content && block.content.length > 0) {
+        const hasText = block.content.some((item: any) => {
+          const text = typeof item === 'string' ? item : (item.text || '');
+          return text.trim().length > 0;
+        });
+        if (hasText) {
+          hasAnyContent = true;
+        }
+      }
+      
       if (block.type === 'heading' && block.content?.length > 0) {
         const text = block.content.map((item: any) => item.text || '').join('');
         if (text.trim()) {
+          const level = block.props?.level || 1;
+          
           extractedHeadings.push({
             id: block.id || `heading-${Math.random().toString(36).substr(2, 9)}`,
             text: text.trim(),
+            level: level,
           });
+          
+          // Auto-update fileName dengan H1 pertama yang ditemukan
+          if (level === 1 && !firstH1Title) {
+            firstH1Title = text.trim();
+          }
         }
       }
     });
+    
     setHeadings(extractedHeadings);
+    
+    // Logic untuk update/reset title
+    if (!hasAnyContent) {
+      // Jika editor benar-benar kosong, reset title
+      setFileName('📝 Tidak ada judul');
+    } else if (firstH1Title && firstH1Title !== fileName) {
+      // Jika ada H1, update dengan H1 tersebut
+      setFileName(firstH1Title);
+    }
+    // Jika ada content tapi tidak ada H1, biarkan title yang ada
   };
 
   const handleSaveDraft = () => {
@@ -236,23 +271,119 @@ export default function Home() {
                 }}
               />
 
-              {/* Daftar heading hasil ketikan user */}
+              {/* Enhanced Daftar heading dengan navigation dan level */}
               <Stack ml="sm" gap={8}>
-                {headings.map(({ id, text }) => (
-                  <Text
-                    key={id}
-                    size="sm"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => {
-                      const element = document.getElementById(id);
-                      if (element) {
-                        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                {headings.length === 0 ? (
+                  <Box ta="center" py="md">
+                    <Text size="xs" c="dimmed" mb="xs">
+                      📋 Outline artikel akan muncul di sini
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      Gunakan AI untuk membuat konten dengan heading
+                    </Text>
+                  </Box>
+                ) : (
+                  headings.map(({ id, text, level }) => {
+                    // Get icon berdasarkan level
+                    const getHeadingIcon = () => {
+                      switch(level) {
+                        case 1: return '📝';
+                        case 2: return '📌';
+                        case 3: return '🔸';
+                        case 4: return '▪️';
+                        default: return '•';
                       }
-                    }}
-                  >
-                    {text}
-                  </Text>
-                ))}
+                    };
+                    
+                    // Get indentation berdasarkan level
+                    const getIndentation = () => {
+                      return (level - 1) * 12;
+                    };
+                    
+                    // Get color berdasarkan level
+                    const getTextColor = () => {
+                      switch(level) {
+                        case 1: return '#1971c2';
+                        case 2: return '#2f9e44';
+                        case 3: return '#f76707';
+                        case 4: return '#7048e8';
+                        default: return '#495057';
+                      }
+                    };
+
+                    return (
+                      <Group
+                        key={id}
+                        gap="xs"
+                        p="xs"
+                        style={{ 
+                          cursor: 'pointer',
+                          marginLeft: getIndentation(),
+                          borderRadius: 6,
+                          transition: 'all 0.2s ease',
+                          border: '1px solid transparent',
+                        }}
+                        className="hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-blue-200"
+                        onClick={() => {
+                          // Enhanced scroll function
+                          try {
+                            // Method 1: Cari berdasarkan block ID
+                            const blockElement = document.querySelector(`[data-id="${id}"]`) as HTMLElement;
+                            if (blockElement) {
+                              blockElement.scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'center' 
+                              });
+                              
+                              // Highlight sementara
+                              blockElement.style.background = 'rgba(59, 130, 246, 0.1)';
+                              blockElement.style.borderLeft = '4px solid #3b82f6';
+                              blockElement.style.borderRadius = '0 8px 8px 0';
+                              setTimeout(() => {
+                                blockElement.style.background = '';
+                                blockElement.style.borderLeft = '';
+                                blockElement.style.borderRadius = '';
+                              }, 2000);
+                              return;
+                            }
+                            
+                            // Method 2: Fallback ke method lama
+                            const element = document.getElementById(id) as HTMLElement;
+                            if (element) {
+                              element.scrollIntoView({ 
+                                behavior: 'smooth', 
+                                block: 'start' 
+                              });
+                            }
+                          } catch (error) {
+                            console.error('Error scrolling to heading:', error);
+                          }
+                        }}
+                      >
+                        <Text size="xs" style={{ minWidth: 16 }}>
+                          {getHeadingIcon()}
+                        </Text>
+                        <Text
+                          size="sm"
+                          fw={level <= 2 ? 600 : 500}
+                          style={{
+                            color: getTextColor(),
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            flex: 1,
+                          }}
+                          title={text}
+                        >
+                          {text}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          H{level}
+                        </Text>
+                      </Group>
+                    );
+                  })
+                )}
               </Stack>
             </Box>
 
