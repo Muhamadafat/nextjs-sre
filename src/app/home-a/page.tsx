@@ -1,15 +1,76 @@
 'use client';
 
-import { ActionIcon, AppShell, Avatar, Box, Burger, Button, Container, Flex, Group, Image, ScrollArea, Stack, Text, TextInput, Title, useComputedColorScheme, useMantineColorScheme } from '@mantine/core';
-import NextImage from 'next/image';
+import { ActionIcon, AppShell, Avatar, Box, Burger, Button, Container, Flex, Group, Image, ScrollArea, Stack, Text, TextInput, ThemeIcon, Title, useComputedColorScheme, useMantineColorScheme } from '@mantine/core';
 
 import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { IconBrain, IconFilePlus, IconGraph, IconMessageCircle2, IconMoon, IconSend, IconSettings, IconSun, IconUpload } from '@tabler/icons-react';
+import NextImage from 'next/image';
 import { useState } from 'react';
 import Split from 'react-split';
 import BlockNoteEditorComponent from '../../components/BlockNoteEditor';
-import myimage from '../imageCollection/LogoSRE_Fix.png';
 import knowledgeImage from '../imageCollection/graph.png';
+import myimage from '../imageCollection/LogoSRE_Fix.png';
+
+// Logo Component menggunakan LogoSRE_Fix.png
+function SmartResearchEngineLogo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
+  const computedColorScheme = useComputedColorScheme('light');
+  
+  const sizeConfig = {
+    sm: { logoWidth: 120, logoHeight: 32, titleSize: 'md' },
+    md: { logoWidth: 160, logoHeight: 40, titleSize: 'lg' },
+    lg: { logoWidth: 200, logoHeight: 48, titleSize: 'xl' }
+  };
+  
+  const config = sizeConfig[size];
+  
+  return (
+    <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
+      <Image
+        component={NextImage}
+        src={myimage}
+        alt="Smart Research Engine Logo"
+        w={config.logoWidth}
+        h={config.logoHeight}
+        fit="contain"
+        style={{
+          flexShrink: 0,
+          filter: computedColorScheme === 'dark' ? 'brightness(1.1)' : 'none',
+        }}
+      />
+      
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <Title
+          order={2}
+          size={config.titleSize}
+          fw={700}
+          c="#007BFF"
+          style={{ 
+            lineHeight: 1.2,
+            margin: 0,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis'
+          }}
+        >
+          Smart Research Engine
+        </Title>
+        {size !== 'sm' && (
+          <Text
+            size="xs"
+            c="dimmed"
+            style={{ 
+              lineHeight: 1.1, 
+              marginTop: 2,
+              whiteSpace: 'nowrap'
+            }}
+          >
+            Knowledge Visualization Platform
+          </Text>
+        )}
+      </div>
+    </Group>
+  );
+}
 
 export default function Home() {
   const [navbarOpened, { toggle: toggleNavbar, close: closeNavbar }] = useDisclosure();
@@ -69,31 +130,69 @@ export default function Home() {
         style={{
           backgroundColor: computedColorScheme === 'dark' ? '#1a1a1a' : '#fff',
           borderBottom: `1px solid ${computedColorScheme === 'dark' ? '#2a2a2a' : '#e0e0e0'}`,
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
         }}
       >
-        <Container size="100%" h="100%">
+        <Container size="100%" h="100%" px="md">
           <Flex justify="space-between" align="center" h="100%" w="100%">
-            <Group>
-              <Burger size="sm" opened={navbarOpened} onClick={toggleNavbar} aria-label="Toggle navigation" />
+            <Group gap="md" style={{ minWidth: 0, flex: 1 }}>
+              <Burger 
+                size="sm" 
+                opened={navbarOpened} 
+                onClick={toggleNavbar} 
+                aria-label="Toggle navigation"
+                style={{ flexShrink: 0 }}
+              />
 
-              <Group gap="sm">
-                <Image component={NextImage} src={myimage} alt="Logo" w={40} h={40} />
-                <Title order={2} size="h3" fw={700} c="#007BFF">
-                  Smart Research Engine
-                </Title>
-              </Group>
+              {/* Logo yang diperbaiki - tidak akan terpotong */}
+              <div style={{ 
+                minWidth: 0, 
+                flex: 1, 
+                maxWidth: isMobile ? 'calc(100vw - 150px)' : 'calc(100vw - 200px)',
+                overflow: 'hidden'
+              }}>
+                <SmartResearchEngineLogo size={isMobile ? "sm" : "md"} />
+              </div>
             </Group>
 
-            <Group gap="md">
-              <ActionIcon onClick={toggleColorScheme} variant="default" size="lg" aria-label="Toggle color scheme">
-                {computedColorScheme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
+            <Group gap="md" style={{ flexShrink: 0 }}>
+              <ActionIcon 
+                onClick={toggleColorScheme} 
+                variant="default" 
+                size="lg" 
+                aria-label="Toggle color scheme"
+                style={{
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {computedColorScheme === 'dark' ? 
+                  <IconSun size={20} /> : 
+                  <IconMoon size={20} />
+                }
               </ActionIcon>
 
-              <ActionIcon variant="default" size="lg" aria-label="Settings">
+              <ActionIcon 
+                variant="default" 
+                size="lg" 
+                aria-label="Settings"
+                style={{
+                  transition: 'all 0.2s ease',
+                }}
+              >
                 <IconSettings size={20} />
               </ActionIcon>
 
-              <Avatar variant="filled" radius="xl" color="#007BFF" alt="User" src="" />
+              <Avatar 
+                variant="filled" 
+                radius="xl" 
+                color="#007BFF" 
+                alt="User" 
+                src="" 
+                style={{
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+              />
             </Group>
           </Flex>
         </Container>
@@ -132,6 +231,7 @@ export default function Home() {
                     borderRadius: '20px',
                     backgroundColor: computedColorScheme === 'dark' ? '#007BFF' : '#007BFF',
                     marginBottom: '12px',
+                    color: 'white',
                   },
                 }}
               />
@@ -169,7 +269,7 @@ export default function Home() {
               cursor="col-resize"
               style={{ display: 'flex', width: '100%' }}
             >
-              {/* Panel Tengah - BlockNote Editor */}
+              {/* Panel Tengah - BlockNote Editor dengan AI Indonesia */}
               <Box
                 style={{
                   width: isMobile ? '100%' : '60%',
@@ -186,7 +286,7 @@ export default function Home() {
                   minHeight: '100%',
                 }}
               >
-                {/* BlockNote Editor Component */}
+                {/* BlockNote Editor Component dengan AI Indonesia */}
                 <BlockNoteEditorComponent
                   onContentChange={handleContentChange}
                   style={{
@@ -199,11 +299,33 @@ export default function Home() {
 
                 {/* Action Buttons */}
                 <Group justify="flex-end" mt="sm" gap="md">
-                  <Button variant="outline" color="gray" leftSection={<IconFilePlus size={18} />} radius="md" size="md" px={24} onClick={handleSaveDraft}>
+                  <Button 
+                    variant="outline" 
+                    color="gray" 
+                    leftSection={<IconFilePlus size={18} />} 
+                    radius="md" 
+                    size="md" 
+                    px={24} 
+                    onClick={handleSaveDraft}
+                    style={{
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
                     Simpan Draf
                   </Button>
 
-                  <Button variant="filled" color="blue" leftSection={<IconUpload size={18} />} radius="md" size="md" px={24} onClick={handleSaveFinal}>
+                  <Button 
+                    variant="filled" 
+                    color="blue" 
+                    leftSection={<IconUpload size={18} />} 
+                    radius="md" 
+                    size="md" 
+                    px={24} 
+                    onClick={handleSaveFinal}
+                    style={{
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
                     Simpan Final
                   </Button>
                 </Group>
@@ -243,9 +365,9 @@ export default function Home() {
                   }}
                 >
                   {[
-                    { icon: <IconGraph size={20} />, value: 'knowledge' },
-                    { icon: <IconMessageCircle2 size={20} />, value: 'chat' },
-                    { icon: <IconBrain size={20} />, value: 'ask' },
+                    { icon: <IconGraph size={20} />, value: 'knowledge', label: 'Knowledge Graph' },
+                    { icon: <IconMessageCircle2 size={20} />, value: 'chat', label: 'Chat' },
+                    { icon: <IconBrain size={20} />, value: 'ask', label: 'AI Assistant' },
                   ].map((item) => (
                     <ActionIcon
                       key={item.value}
@@ -258,7 +380,9 @@ export default function Home() {
                         border: activeTab === item.value ? '2px solid transparent' : '2px solid #007BFF',
                         backgroundColor: activeTab === item.value ? '#007BFF' : 'transparent',
                         color: activeTab === item.value ? 'white' : '#007BFF',
+                        transition: 'all 0.2s ease',
                       }}
+                      title={item.label}
                     >
                       {item.icon}
                     </ActionIcon>
@@ -269,7 +393,13 @@ export default function Home() {
                 <Box style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                   {activeTab === 'knowledge' && (
                     <Box style={{ textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                      <NextImage src={knowledgeImage} alt="Knowledge Graph" width={200} height={150} style={{ margin: '0 auto' }} />
+                      <NextImage 
+                        src={knowledgeImage} 
+                        alt="Knowledge Graph" 
+                        width={200} 
+                        height={150} 
+                        style={{ margin: '0 auto' }} 
+                      />
                       <Text size="sm" mt="md" c="dimmed">
                         Knowledge Graph akan muncul di sini
                       </Text>
@@ -278,25 +408,68 @@ export default function Home() {
 
                   {activeTab === 'chat' && (
                     <Box style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                      <Text size="sm" fw={600} mb="md" c="dimmed">
+                        💬 Chat dengan AI
+                      </Text>
                       <ScrollArea style={{ flex: 1, marginBottom: '10px' }}>
                         <Stack gap="xs">
-                          {messages.map((msg, index) => (
+                          {messages.length === 0 ? (
                             <Box
-                              key={index}
-                              p="xs"
+                              p="md"
                               style={{
-                                backgroundColor: computedColorScheme === 'dark' ? '#444' : '#e7f3ff',
+                                backgroundColor: computedColorScheme === 'dark' ? '#444' : '#f0f8ff',
                                 borderRadius: '8px',
+                                textAlign: 'center',
                               }}
                             >
-                              <Text size="sm">{msg}</Text>
+                              <IconMessageCircle2 size={32} style={{ margin: '0 auto 8px', color: '#007BFF' }} />
+                              <Text size="sm" c="dimmed">
+                                Mulai percakapan dengan AI assistant
+                              </Text>
                             </Box>
-                          ))}
+                          ) : (
+                            messages.map((msg, index) => (
+                              <Box
+                                key={index}
+                                p="xs"
+                                style={{
+                                  backgroundColor: computedColorScheme === 'dark' ? '#444' : '#e7f3ff',
+                                  borderRadius: '8px',
+                                  marginLeft: index % 2 === 0 ? '0' : '20px',
+                                  marginRight: index % 2 === 0 ? '20px' : '0',
+                                }}
+                              >
+                                <Text size="sm">{msg}</Text>
+                              </Box>
+                            ))
+                          )}
                         </Stack>
                       </ScrollArea>
                       <Group gap="xs">
-                        <TextInput placeholder="Ketik pesan..." value={chatInput} onChange={(e) => setChatInput(e.currentTarget.value)} onKeyDown={(e) => e.key === 'Enter' && sendMessage()} style={{ flex: 1 }} />
-                        <ActionIcon onClick={sendMessage} color="blue" variant="filled">
+                        <TextInput 
+                          placeholder="Ketik pesan..." 
+                          value={chatInput} 
+                          onChange={(e) => setChatInput(e.currentTarget.value)} 
+                          onKeyDown={(e) => e.key === 'Enter' && sendMessage()} 
+                          style={{ flex: 1 }}
+                          styles={{
+                            input: {
+                              borderColor: '#007BFF',
+                              '&:focus': {
+                                borderColor: '#007BFF',
+                              }
+                            }
+                          }}
+                        />
+                        <ActionIcon 
+                          onClick={sendMessage} 
+                          color="blue" 
+                          variant="filled"
+                          size="lg"
+                          style={{
+                            transition: 'all 0.2s ease',
+                          }}
+                        >
                           <IconSend size={16} />
                         </ActionIcon>
                       </Group>
@@ -305,9 +478,27 @@ export default function Home() {
 
                   {activeTab === 'ask' && (
                     <Box style={{ textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                      <IconBrain size={64} style={{ margin: '0 auto', color: '#007BFF' }} />
-                      <Text size="sm" mt="md" c="dimmed">
-                        AI Assistant akan muncul di sini
+                      <ThemeIcon
+                        variant="gradient"
+                        gradient={{ from: '#007BFF', to: '#0056b3', deg: 45 }}
+                        size={80}
+                        radius="xl"
+                        mx="auto"
+                        mb="md"
+                        style={{
+                          boxShadow: '0 4px 16px rgba(0, 123, 255, 0.3)',
+                        }}
+                      >
+                        <IconBrain size={48} />
+                      </ThemeIcon>
+                      <Text fw={600} mb="xs">
+                        🤖 Asisten AI
+                      </Text>
+                      <Text size="sm" c="dimmed" mb="md">
+                        AI Assistant terintegrasi dengan editor untuk membantu menulis konten
+                      </Text>
+                      <Text size="xs" c="dimmed" style={{ fontStyle: 'italic' }}>
+                        💡 Gunakan tombol AI di editor atau ketik "/" untuk mengakses fitur AI
                       </Text>
                     </Box>
                   )}
