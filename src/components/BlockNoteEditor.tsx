@@ -9,6 +9,7 @@ import {
   SuggestionMenuController,
   getDefaultReactSlashMenuItems,
   useCreateBlockNote,
+  DefaultReactSuggestionItem,
 } from "@blocknote/react";
 import {
   ActionIcon,
@@ -34,13 +35,14 @@ import {
   IconBulb,
   IconCheck,
   IconCopy,
-  IconEdit, // Fixed: Use IconEdit instead of IconWrite
+  IconEdit,
   IconList,
   IconPalette,
   IconPencil,
   IconQuestionMark,
   IconRobot,
-  IconSparkles
+  IconSparkles,
+  IconSettings
 } from "@tabler/icons-react";
 import { generateText } from "ai";
 import React from "react";
@@ -85,354 +87,76 @@ export default function BlockNoteEditorComponent({
   // Create BlockNote editor
   const editor = useCreateBlockNote();
 
-  // Enhanced AI generation dengan format markdown yang proper dan lengkap
-  const generateAIContent = async (prompt: string, type: string = "general") => {
-    if (!aiModel) return null;
-    
-    setIsAILoading(true);
-    try {
-      let systemPrompt = "";
-      
-      switch (type) {
-        case "blog":
-          systemPrompt = `Tulis artikel blog yang SANGAT KOMPREHENSIF dan DETAIL tentang: ${prompt}. 
+  // AI templates - simplified ke dua mode: Struktur dan Konten
+  const aiTemplates = [
+    {
+      title: "Struktur",
+      description: "Generate outline/bab dan sub bab",
+      type: "structure",
+      color: "blue",
+      icon: IconList,
+      defaultPrompt: "Panduan lengkap memulai karir di bidang teknologi"
+    },
+    {
+      title: "Konten", 
+      description: "Generate konten detail untuk bab yang sudah ada",
+      type: "content",
+      color: "green", 
+      icon: IconEdit,
+      defaultPrompt: "Jelaskan secara detail tentang persiapan CV dan portfolio"
+    }
+  ];
+
+  // Function to filter slash menu items dengan memoization untuk stabilitas
+  const getFilteredSlashMenuItems = React.useMemo(() => {
+    return (editor: any): DefaultReactSuggestionItem[] => {
+      try {
+        const defaultItems = getDefaultReactSlashMenuItems(editor);
+        
+        // Filter untuk menyimpan heading, paragraph, dan list items tapi exclude toggle items
+        const allowedItems = defaultItems.filter((item) => {
+          const title = item.title.toLowerCase();
           
-          INSTRUKSI KHUSUS: 
-          - Berikan penjelasan yang LENGKAP dan TUNTAS untuk SETIAP poin
-          - Jangan berhenti di tengah-tengah atau memotong penjelasan
-          - Setiap sub bab minimal 2-3 paragraf dengan detail mendalam
-          - Berikan contoh konkret dan actionable untuk setiap konsep
-          - Pastikan TIDAK ADA yang tertinggal atau menggantung
-          
-          WAJIB gunakan format markdown dengan struktur LENGKAP:
-          
-          # Bab 1: Pengenalan ${prompt}
-          
-          ## Sub Bab 1.1: Latar Belakang dan Pentingnya
-          [Jelaskan LENGKAP mengapa topik ini penting, latar belakang sejarah, dan relevansi di masa kini. Minimal 3 paragraf dengan detail mendalam]
-          
-          ## Sub Bab 1.2: Definisi dan Konsep Dasar
-          [Berikan definisi yang komprehensif, konsep-konsep dasar yang perlu dipahami, dan terminologi penting. Jelaskan dengan detail dan contoh]
-          
-          # Bab 2: Analisis Mendalam dan Implementasi
-          
-          ## Sub Bab 2.1: Cara Kerja dan Mekanisme
-          [Jelaskan DETAIL bagaimana topik ini bekerja, step-by-step process, dan mekanisme di baliknya. Berikan contoh konkret dan analogi yang mudah dipahami]
-          
-          ## Sub Bab 2.2: Best Practices dan Strategi
-          [Berikan panduan praktis, best practices, strategi implementasi yang terbukti efektif. Sertakan tips dan trik yang actionable]
-          
-          ## Sub Bab 2.3: Studi Kasus dan Contoh Nyata
-          [Berikan 2-3 studi kasus nyata dengan analisis mendalam. Jelaskan apa yang bisa dipelajari dari setiap kasus]
-          
-          # Bab 3: Tantangan dan Solusi
-          
-          ## Sub Bab 3.1: Tantangan Umum dan Cara Mengatasinya
-          [Identifikasi tantangan-tantangan yang sering dihadapi dan berikan solusi praktis untuk mengatasinya]
-          
-          ## Sub Bab 3.2: Tips Optimasi dan Improvement
-          [Berikan tips untuk optimasi, improvement, dan cara mencapai hasil yang lebih baik]
-          
-          # Bab 4: Kesimpulan dan Rekomendasi
-          
-          ## Sub Bab 4.1: Rangkuman Poin Kunci
-          [Rangkum semua poin penting yang telah dibahas dengan jelas dan sistematis]
-          
-          ## Sub Bab 4.2: Rekomendasi dan Langkah Selanjutnya
-          [Berikan rekomendasi actionable dan langkah-langkah konkret yang bisa diambil pembaca]
-          
-          PENTING: 
-          - Setiap sub bab harus LENGKAP dengan penjelasan detail minimal 150-200 kata
-          - Jangan gunakan placeholder atau kalimat yang tidak selesai
-          - Berikan contoh konkret di setiap bagian
-          - Pastikan pembaca mendapat value yang maksimal
-          - LANJUTKAN SAMPAI SELESAI, jangan berhenti di tengah-tengah`;
-          break;
-          
-        case "summary":
-          systemPrompt = `Buat ringkasan informatif yang LENGKAP dan KOMPREHENSIF tentang: ${prompt}. 
-          WAJIB gunakan format markdown:
-          # Ringkasan: ${prompt}
-          
-          ## Poin Kunci
-          [5-7 poin utama yang paling penting dengan penjelasan LENGKAP untuk setiap poin]
-          
-          ## Detail Penting
-          [penjelasan LENGKAP dan DETAIL untuk setiap aspek penting]
-          
-          ## Implikasi dan Dampak
-          [analisis LENGKAP tentang dampak dan implikasi]
-          
-          ## Kesimpulan
-          [rangkuman final yang KOMPREHENSIF]
-          
-          PENTING: Berikan informasi yang LENGKAP dan TUNTAS. Jangan potong penjelasan di tengah-tengah.`;
-          break;
-          
-        case "explain":
-          systemPrompt = `Jelaskan dengan SANGAT DETAIL dan KOMPREHENSIF tentang: ${prompt}. 
-          
-          INSTRUKSI KHUSUS:
-          - Jelaskan SETIAP aspek dengan detail mendalam
-          - Berikan contoh konkret untuk SETIAP konsep
-          - Jangan tinggalkan pertanyaan yang belum terjawab
-          - Pastikan pembaca benar-benar memahami topik secara menyeluruh
-          - Setiap sub bab minimal 2-3 paragraf dengan penjelasan tuntas
-          
-          WAJIB gunakan format markdown:
-          
-          # Bab 1: Pengenalan Komprehensif ${prompt}
-          
-          ## Sub Bab 1.1: Definisi dan Konsep Fundamental
-          [Jelaskan definisi yang sangat detail, konsep dasar, dan terminologi penting. Berikan etimologi jika perlu dan hubungkan dengan konsep yang sudah dikenal pembaca]
-          
-          ## Sub Bab 1.2: Sejarah dan Evolusi
-          [Jelaskan perkembangan historis, milestone penting, dan bagaimana konsep ini berkembang hingga sekarang]
-          
-          ## Sub Bab 1.3: Mengapa Ini Penting?
-          [Jelaskan relevansi, dampak, dan mengapa pembaca perlu memahami topik ini]
-          
-          # Bab 2: Mekanisme dan Cara Kerja Detail
-          
-          ## Sub Bab 2.1: Prinsip Kerja Fundamental
-          [Jelaskan bagaimana ini bekerja step-by-step dengan detail yang sangat jelas. Gunakan analogi jika membantu]
-          
-          ## Sub Bab 2.2: Komponen dan Elemen Penting
-          [Breakdown semua komponen penting dan jelaskan peran masing-masing dengan detail]
-          
-          ## Sub Bab 2.3: Proses dan Alur Kerja
-          [Jelaskan alur kerja lengkap dari awal hingga akhir dengan contoh konkret]
-          
-          # Bab 3: Aplikasi dan Implementasi Praktis
-          
-          ## Sub Bab 3.1: Contoh Nyata dalam Kehidupan Sehari-hari
-          [Berikan minimal 3-5 contoh konkret bagaimana ini diterapkan dalam kehidupan nyata]
-          
-          ## Sub Bab 3.2: Langkah-langkah Implementasi
-          [Berikan panduan praktis step-by-step bagaimana menerapkan atau menggunakan konsep ini]
-          
-          ## Sub Bab 3.3: Tips dan Best Practices
-          [Berikan tips praktis, best practices, dan hal-hal yang perlu diperhatikan]
-          
-          # Bab 4: Troubleshooting dan FAQ
-          
-          ## Sub Bab 4.1: Kesalahan Umum dan Cara Menghindarinya
-          [Identifikasi kesalahan yang sering terjadi dan berikan solusi preventif]
-          
-          ## Sub Bab 4.2: FAQ dan Jawaban Mendalam
-          [Jawab pertanyaan-pertanyaan yang sering muncul dengan penjelasan detail]
-          
-          PENTING: 
-          - Gunakan bahasa yang mudah dipahami tapi tetap akurat secara teknis
-          - Setiap sub bab minimal 150-200 kata dengan penjelasan mendalam
-          - Berikan contoh konkret dan relatable di setiap bagian
-          - PASTIKAN TIDAK ADA yang tertinggal atau menggantung`;
-          break;
-          
-        case "creative":
-          systemPrompt = `Tulis konten kreatif yang LENGKAP dan MENARIK tentang: ${prompt}. 
-          WAJIB gunakan format markdown:
-          # ${prompt}
-          
-          ## Pembuka yang Menarik
-          [hook yang engaging dan menarik perhatian dengan detail yang LENGKAP]
-          
-          ## Pengembangan Cerita
-          [konten utama yang kreatif, imajinatif, dan LENGKAP dengan detail yang kaya]
-          
-          ## Plot Twist atau Elemen Menarik
-          [elemen mengejutkan atau menarik dengan pengembangan yang LENGKAP]
-          
-          ## Pengembangan Karakter/Konsep
-          [pengembangan lebih lanjut yang DETAIL dan LENGKAP]
-          
-          ## Penutup yang Berkesan
-          [ending yang memorable, impactful, dan LENGKAP]
-          
-          PENTING: Buat konten yang engaging, imajinatif, dan LENGKAP. Kembangkan setiap bagian dengan detail yang kaya dan jangan berhenti di tengah-tengah.`;
-          break;
-          
-        default:
-          systemPrompt = `Tulis konten berkualitas tinggi yang LENGKAP dan KOMPREHENSIF tentang: ${prompt}. 
-          WAJIB gunakan format markdown dengan struktur heading:
-          # Judul Utama
-          
-          ## Pendahuluan
-          [konten pembuka yang LENGKAP dan menarik]
-          
-          ## Poin Utama 1
-          [konten dengan detail yang LENGKAP, contoh, dan analisis]
-          
-          ## Poin Utama 2
-          [konten dengan detail yang LENGKAP, contoh, dan analisis]
-          
-          ## Poin Utama 3
-          [konten dengan detail yang LENGKAP, contoh, dan analisis]
-          
-          ## Kesimpulan
-          [rangkuman dan insight yang LENGKAP dan actionable]
-          
-          PENTING: Buat konten yang informatif, terstruktur, menarik, dan LENGKAP. Berikan penjelasan yang TUNTAS untuk setiap bagian. Jangan berhenti sebelum menyelesaikan semua aspek penting dari topik ini.`;
+          // Keep heading 1, 2, 3, paragraph, numbered list, dan bullet list
+          // Exclude semua toggle items termasuk subheading toggle
+          return (
+            title.includes("heading 1") ||
+            title.includes("heading 2") ||
+            title.includes("heading 3") ||
+            title.includes("paragraph") ||
+            title.includes("numbered list") ||
+            title.includes("bullet list") ||
+            title.includes("bulleted list") // Alternative name untuk bullet list
+          ) && !title.includes("toggle"); // Exclude toggle items
+        });
+
+        return allowedItems;
+      } catch (error) {
+        console.error("Error in getFilteredSlashMenuItems:", error);
+        // Fallback: return all default items jika ada error
+        return getDefaultReactSlashMenuItems(editor);
       }
+    };
+  }, []);
 
-      const { text } = await generateText({
-        model: aiModel,
-        prompt: systemPrompt,
-        maxTokens: 4000, // Ditingkatkan lagi dari 3000 ke 4000 untuk konten yang lebih lengkap
-        temperature: 0.7,
-        presencePenalty: 0.1, // Mencegah repetisi
-        frequencyPenalty: 0.1, // Mendorong variasi konten
-      });
-      
-      setGeneratedContent(text);
-      return text;
-    } catch (error) {
-      console.error("AI generation failed:", error);
-      return null;
-    } finally {
-      setIsAILoading(false);
-    }
-  };
-
-  // Enhanced AI generation dengan validasi input dan clear editor
-  const handleAIGeneration = async (inputPrompt: string, type: string = "general") => {
-    if (!inputPrompt.trim()) {
-      alert("⚠️ Silakan masukkan topik atau kata kunci sebelum generate konten!");
-      return;
-    }
+  // Custom AI Slash Menu Items - dengan ikon sparkles seperti Gemini
+  const getCustomAISlashMenuItems = React.useMemo((): DefaultReactSuggestionItem[] => {
+    if (!aiModel) return [];
     
-    // Clear editor content sebelum generate konten baru
-    try {
-      // Get semua blocks di editor
-      const currentBlocks = editor.document;
-      
-      // Jika ada content, kosongkan editor
-      if (currentBlocks.length > 0) {
-        // Hapus semua blocks kecuali block pertama
-        if (currentBlocks.length > 1) {
-          const blocksToRemove = currentBlocks.slice(1);
-          editor.removeBlocks(blocksToRemove);
-        }
-        
-        // Reset block pertama menjadi paragraph kosong
-        const firstBlock = editor.document[0];
-        if (firstBlock) {
-          editor.updateBlock(firstBlock, {
-            type: "paragraph",
-            content: "",
-          });
-        }
+    return [
+      {
+        title: "✨ AI Assistant",
+        onItemClick: () => {
+          openAIModal();
+        },
+        aliases: ["ai", "assistant", "generate", "write", "tulis"],
+        group: "Headings",
+        subtext: "Buat konten dengan bantuan AI",
       }
-    } catch (error) {
-      console.log("Editor clearing adjustment:", error);
-    }
-    
-    // Generate AI content
-    await generateAIContent(inputPrompt, type);
-  };
+    ];
+  }, [aiModel, openAIModal]);
 
-  // Enhanced insert function dengan parsing markdown formatting yang lengkap
-  const insertContentToEditor = () => {
-    if (!generatedContent) return;
-
-    try {
-      const currentPos = editor.getTextCursorPosition();
-      const lines = generatedContent.split('\n').filter(line => line.trim());
-      
-      let insertedBlocks = 0;
-      
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        
-        let blockType = "paragraph";
-        let content: any = line;
-        let props = {};
-        
-        // Parse heading markdown
-        if (line.match(/^# .+/)) {
-          blockType = "heading";
-          props = { level: 1 };
-          content = parseInlineFormatting(line.replace(/^# /, '').trim());
-        } else if (line.match(/^## .+/)) {
-          blockType = "heading";
-          props = { level: 2 };
-          content = parseInlineFormatting(line.replace(/^## /, '').trim());
-        } else if (line.match(/^### .+/)) {
-          blockType = "heading";
-          props = { level: 3 };
-          content = parseInlineFormatting(line.replace(/^### /, '').trim());
-        } else if (line.match(/^#### .+/)) {
-          blockType = "heading";
-          props = { level: 4 };
-          content = parseInlineFormatting(line.replace(/^#### /, '').trim());
-        } else if (line.match(/^##### .+/)) {
-          blockType = "heading";
-          props = { level: 5 };
-          content = parseInlineFormatting(line.replace(/^##### /, '').trim());
-        } else if (line.match(/^###### .+/)) {
-          blockType = "heading";
-          props = { level: 6 };
-          content = parseInlineFormatting(line.replace(/^###### /, '').trim());
-        } else if (line.match(/^\* .+/) || line.match(/^- .+/)) {
-          // Parse list items
-          blockType = "bulletListItem";
-          content = parseInlineFormatting(line.replace(/^[\*-] /, '').trim());
-        } else if (line.match(/^\d+\. .+/)) {
-          // Parse numbered list items
-          blockType = "numberedListItem";
-          content = parseInlineFormatting(line.replace(/^\d+\. /, '').trim());
-        } else {
-          // Parse regular paragraphs
-          content = parseInlineFormatting(line);
-        }
-        
-        const blockData: any = {
-          type: blockType,
-          content: content,
-          props: props,
-        };
-        
-        if (insertedBlocks === 0) {
-          // Replace current block
-          editor.updateBlock(currentPos.block, blockData);
-        } else {
-          // Insert new blocks
-          const targetBlock = editor.getTextCursorPosition().block;
-          editor.insertBlocks([blockData], targetBlock, "after");
-          
-          // Move cursor
-          setTimeout(() => {
-            try {
-              const blocks = editor.document;
-              const lastBlock = blocks[blocks.length - 1];
-              if (lastBlock) {
-                editor.setTextCursorPosition(lastBlock, "end");
-              }
-            } catch (e) {
-              console.log("Cursor positioning adjustment");
-            }
-          }, 100);
-        }
-        
-        insertedBlocks++;
-      }
-      
-      closeModalAndReset();
-      
-      // Simple & Elegant Success Notification dengan delay
-      setTimeout(() => {
-        const headingCount = lines.filter(line => line.match(/^#{1,6} /)).length;
-        showSimpleSuccessNotification(insertedBlocks, headingCount);
-      }, 300);
-      
-    } catch (error) {
-      console.error("Error inserting content:", error);
-      showErrorPopup();
-    }
-  };
-
-  // Function untuk parsing inline formatting (bold, italic, dll)
+  // Parse inline formatting dari teks markdown
   const parseInlineFormatting = (text: string): any[] => {
     if (!text || typeof text !== 'string') return [{ type: "text", text: text || "" }];
     
@@ -548,283 +272,219 @@ export default function BlockNoteEditorComponent({
     return result;
   };
 
-  // Simple & Elegant Success Notification
-  const showSimpleSuccessNotification = (blocksCount: number, headingsCount: number) => {
-    // Create notification container
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: white;
-      border: 1px solid #e3f2fd;
-      border-left: 4px solid #2196f3;
-      border-radius: 8px;
-      padding: 16px 20px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      z-index: 10000;
-      min-width: 300px;
-      max-width: 400px;
-      animation: slideInRight 0.3s ease-out;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    `;
+  // Enhanced AI generation dengan dua mode: Struktur dan Konten
+  const generateAIContent = async (prompt: string, type: string = "structure") => {
+    if (!aiModel) return null;
+    
+    setIsAILoading(true);
+    try {
+      let systemPrompt = "";
+      
+      if (type === "structure") {
+        systemPrompt = `Buat STRUKTUR/OUTLINE lengkap dengan bab dan sub bab untuk topik: ${prompt}
 
-    // Success content
-    notification.innerHTML = `
-      <div style="display: flex; align-items: flex-start; gap: 12px;">
-        <div style="
-          width: 24px;
-          height: 24px;
-          background: #4caf50;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          margin-top: 2px;
-        ">
-          <span style="color: white; font-size: 14px; font-weight: bold;">✓</span>
-        </div>
-        
-        <div style="flex: 1;">
-          <div style="
-            font-weight: 600;
-            color: #1976d2;
-            font-size: 14px;
-            margin-bottom: 4px;
-          ">
-            Konten berhasil dimasukkan!
-          </div>
-          
-          <div style="
-            color: #666;
-            font-size: 13px;
-            line-height: 1.4;
-          ">
-            ${blocksCount} blok ditambahkan, ${headingsCount} heading terdeteksi
-          </div>
-        </div>
-        
-        <button onclick="this.parentElement.parentElement.remove()" style="
-          background: none;
-          border: none;
-          color: #999;
-          cursor: pointer;
-          font-size: 18px;
-          padding: 0;
-          width: 20px;
-          height: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 50%;
-          transition: all 0.2s ease;
-        " onmouseover="this.style.background='#f5f5f5'; this.style.color='#333'" onmouseout="this.style.background='none'; this.style.color='#999'">
-          ×
-        </button>
-      </div>
-    `;
-    
-    // Add to body
-    document.body.appendChild(notification);
-    
-    // Auto remove after 4 seconds
-    setTimeout(() => {
-      if (document.body.contains(notification)) {
-        notification.style.animation = 'slideOutRight 0.3s ease-out';
-        setTimeout(() => {
-          if (document.body.contains(notification)) {
-            document.body.removeChild(notification);
-          }
-        }, 300);
+Format yang WAJIB digunakan:
+# Judul Utama: [Topik]
+
+## Bab 1: [Nama Bab]
+### Sub Bab 1.1: [Nama Sub Bab]
+### Sub Bab 1.2: [Nama Sub Bab]
+### Sub Bab 1.3: [Nama Sub Bab]
+
+## Bab 2: [Nama Bab]
+### Sub Bab 2.1: [Nama Sub Bab]
+### Sub Bab 2.2: [Nama Sub Bab]
+### Sub Bab 2.3: [Nama Sub Bab]
+
+## Bab 3: [Nama Bab]
+### Sub Bab 3.1: [Nama Sub Bab]
+### Sub Bab 3.2: [Nama Sub Bab]
+
+## Kesimpulan
+
+PENTING: 
+- Hanya buat outline/struktur saja, TIDAK mengisi konten detail
+- Gunakan format markdown heading (# ## ###) 
+- Buat minimal 3-4 bab dengan 2-3 sub bab per bab
+- Nama bab dan sub bab harus spesifik dan deskriptif`;
+
+      } else if (type === "content") {
+        systemPrompt = `Generate KONTEN DETAIL untuk mengisi struktur yang sudah ada. Topik: ${prompt}
+
+Format yang diharapkan:
+- Tulis konten detail dalam bentuk paragraf yang lengkap
+- Berikan penjelasan mendalam, contoh, dan insight praktis
+- Gunakan bahasa yang engaging dan mudah dipahami
+- Sertakan tips, langkah-langkah, atau panduan konkret
+- Buat konten yang actionable dan bermanfaat
+
+PENTING:
+- Fokus pada KONTEN DETAIL, bukan struktur
+- Berikan informasi yang comprehensive dan valuable
+- Gunakan paragraf yang well-structured
+- Sertakan contoh atau case study jika relevan`;
+
+      } else {
+        // Fallback ke struktur
+        systemPrompt = `Buat outline lengkap untuk topik: ${prompt}. Gunakan format markdown heading dengan struktur yang jelas.`;
       }
-    }, 4000);
 
-    // Add CSS animations if not exists
-    if (!document.getElementById('notification-styles')) {
-      const style = document.createElement('style');
-      style.id = 'notification-styles';
-      style.textContent = `
-        @keyframes slideInRight {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
-        }
-        
-        @keyframes slideOutRight {
-          from {
-            transform: translateX(0);
-            opacity: 1;
-          }
-          to {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-        }
-      `;
-      document.head.appendChild(style);
+      const { text } = await generateText({
+        model: aiModel,
+        prompt: systemPrompt,
+        maxTokens: type === "structure" ? 1500 : 3000, // Struktur lebih pendek, konten lebih panjang
+        temperature: 0.7,
+        presencePenalty: 0.1,
+        frequencyPenalty: 0.1,
+      });
+      
+      setGeneratedContent(text);
+      return text;
+    } catch (error) {
+      console.error("AI generation failed:", error);
+      return null;
+    } finally {
+      setIsAILoading(false);
     }
   };
 
-  // Simple Error Notification
-  const showErrorPopup = () => {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: white;
-      border: 1px solid #ffebee;
-      border-left: 4px solid #f44336;
-      border-radius: 8px;
-      padding: 16px 20px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      z-index: 10000;
-      min-width: 300px;
-      max-width: 400px;
-      animation: slideInRight 0.3s ease-out;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    `;
-
-    notification.innerHTML = `
-      <div style="display: flex; align-items: flex-start; gap: 12px;">
-        <div style="
-          width: 24px;
-          height: 24px;
-          background: #f44336;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-shrink: 0;
-          margin-top: 2px;
-        ">
-          <span style="color: white; font-size: 14px; font-weight: bold;">!</span>
-        </div>
-        
-        <div style="flex: 1;">
-          <div style="
-            font-weight: 600;
-            color: #d32f2f;
-            font-size: 14px;
-            margin-bottom: 4px;
-          ">
-            Gagal memasukkan konten
-          </div>
-          
-          <div style="
-            color: #666;
-            font-size: 13px;
-            line-height: 1.4;
-          ">
-            Silakan copy paste manual
-          </div>
-        </div>
-        
-        <button onclick="this.parentElement.parentElement.remove()" style="
-          background: none;
-          border: none;
-          color: #999;
-          cursor: pointer;
-          font-size: 18px;
-          padding: 0;
-          width: 20px;
-          height: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border-radius: 50%;
-          transition: all 0.2s ease;
-        " onmouseover="this.style.background='#f5f5f5'; this.style.color='#333'" onmouseout="this.style.background='none'; this.style.color='#999'">
-          ×
-        </button>
-      </div>
-    `;
+  // Enhanced AI generation dengan validasi input dan clear editor
+  const handleAIGeneration = async (inputPrompt: string, type: string = "structure") => {
+    if (!inputPrompt.trim()) {
+      alert("⚠️ Silakan masukkan topik atau kata kunci sebelum generate konten!");
+      return;
+    }
     
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      if (document.body.contains(notification)) {
-        notification.style.animation = 'slideOutRight 0.3s ease-out';
-        setTimeout(() => {
-          if (document.body.contains(notification)) {
-            document.body.removeChild(notification);
-          }
-        }, 300);
+    // Clear editor content sebelum generate konten baru
+    try {
+      // Get semua blocks di editor
+      const currentBlocks = editor.document;
+      
+      // Jika ada content, kosongkan editor
+      if (currentBlocks.length > 0) {
+        // Hapus semua blocks kecuali block pertama
+        if (currentBlocks.length > 1) {
+          const blocksToRemove = currentBlocks.slice(1);
+          editor.removeBlocks(blocksToRemove);
+        }
+        
+        // Reset block pertama menjadi paragraph kosong
+        const firstBlock = editor.document[0];
+        if (firstBlock) {
+          editor.updateBlock(firstBlock, {
+            type: "paragraph",
+            content: "",
+          });
+        }
       }
-    }, 4000);
+    } catch (error) {
+      console.log("Editor clearing adjustment:", error);
+    }
+    
+    // Generate AI content dengan type yang sesuai
+    await generateAIContent(inputPrompt, type);
   };
 
+  // Enhanced insert function dengan parsing markdown formatting yang lengkap
+  const insertContentToEditor = () => {
+    if (!generatedContent) return;
+
+    try {
+      // Clear editor content first
+      const currentBlocks = editor.document;
+      if (currentBlocks.length > 0) {
+        // Remove all blocks
+        editor.removeBlocks(currentBlocks);
+      }
+
+      const lines = generatedContent.split('\n').filter(line => line.trim());
+      const blocksToInsert = [];
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        let blockType = "paragraph";
+        let content: any = line;
+        let props = {};
+        
+        // Parse heading markdown
+        if (line.match(/^# .+/)) {
+          blockType = "heading";
+          props = { level: 1 };
+          content = parseInlineFormatting(line.replace(/^# /, '').trim());
+        } else if (line.match(/^## .+/)) {
+          blockType = "heading";
+          props = { level: 2 };
+          content = parseInlineFormatting(line.replace(/^## /, '').trim());
+        } else if (line.match(/^### .+/)) {
+          blockType = "heading";
+          props = { level: 3 };
+          content = parseInlineFormatting(line.replace(/^### /, '').trim());
+        } else if (line.match(/^#### .+/)) {
+          blockType = "heading";
+          props = { level: 4 };
+          content = parseInlineFormatting(line.replace(/^#### /, '').trim());
+        } else if (line.match(/^##### .+/)) {
+          blockType = "heading";
+          props = { level: 5 };
+          content = parseInlineFormatting(line.replace(/^##### /, '').trim());
+        } else if (line.match(/^###### .+/)) {
+          blockType = "heading";
+          props = { level: 6 };
+          content = parseInlineFormatting(line.replace(/^###### /, '').trim());
+        } else if (line.match(/^\* .+/) || line.match(/^- .+/)) {
+          // Parse list items
+          blockType = "bulletListItem";
+          content = parseInlineFormatting(line.replace(/^[\*-] /, '').trim());
+        } else if (line.match(/^\d+\. .+/)) {
+          // Parse numbered list items
+          blockType = "numberedListItem";
+          content = parseInlineFormatting(line.replace(/^\d+\. /, '').trim());
+        } else {
+          // Parse regular paragraphs
+          content = parseInlineFormatting(line);
+        }
+        
+        const blockData: any = {
+          type: blockType,
+          content: content,
+          props: props,
+        };
+        
+        blocksToInsert.push(blockData);
+      }
+      
+      // Insert all blocks at once from the beginning
+      if (blocksToInsert.length > 0) {
+        editor.replaceBlocks(editor.document, blocksToInsert);
+        
+        // Move cursor to the beginning
+        setTimeout(() => {
+          try {
+            const firstBlock = editor.document[0];
+            if (firstBlock) {
+              editor.setTextCursorPosition(firstBlock, "start");
+            }
+          } catch (e) {
+            console.log("Cursor positioning adjustment");
+          }
+        }, 100);
+      }
+      
+      closeModalAndReset();
+      
+    } catch (error) {
+      console.error("Error inserting content:", error);
+    }
+  };
+
+  // Reset modal state
   const closeModalAndReset = () => {
     closeAIModal();
     setPrompt("");
     setGeneratedContent("");
-  };
-
-  // Enhanced AI Templates dengan bahasa Indonesia
-  const aiTemplates = [
-    {
-      title: "Artikel Umum",
-      description: "Generate konten apapun",
-      type: "general",
-      color: "blue",
-      icon: IconEdit, // Fixed: Use IconEdit instead of IconWrite
-      defaultPrompt: "Dampak teknologi AI terhadap dunia kerja"
-    },
-    {
-      title: "Blog Post",
-      description: "Buat artikel blog lengkap",
-      type: "blog", 
-      color: "green",
-      icon: IconPencil,
-      defaultPrompt: "Panduan lengkap memulai karir di bidang teknologi"
-    },
-    {
-      title: "Ringkasan",
-      description: "Ringkasan singkat dan padat",
-      type: "summary",
-      color: "orange",
-      icon: IconList,
-      defaultPrompt: "Tren teknologi terbaru tahun 2024"
-    },
-    {
-      title: "Penjelasan",
-      description: "Penjelasan topik kompleks",
-      type: "explain",
-      color: "purple",
-      icon: IconQuestionMark,
-      defaultPrompt: "Blockchain dan cryptocurrency untuk pemula"
-    },
-    {
-      title: "Konten Kreatif",
-      description: "Tulisan kreatif dan menarik",
-      type: "creative",
-      color: "pink",
-      icon: IconPalette,
-      defaultPrompt: "Masa depan teknologi dalam 20 tahun mendatang"
-    }
-  ];
-
-  // Custom AI Slash Menu Items
-  const getCustomAISlashMenuItems = () => {
-    if (!aiModel) return [];
-    
-    return [
-      {
-        title: "🤖 AI Assistant",
-        onItemClick: () => {
-          openAIModal();
-        },
-        aliases: ["ai", "assistant", "generate", "write", "tulis"],
-        group: "AI Assistant",
-        hint: "Buka AI Assistant dengan template",
-      }
-    ];
+    setIsAILoading(false);
   };
 
   // Handle content changes untuk heading extraction
@@ -872,18 +532,16 @@ export default function BlockNoteEditorComponent({
             }}
             slashMenu={false}
           >
-            {/* Custom Slash Menu dengan AI */}
+            {/* Custom Slash Menu dengan AI di posisi teratas dan item yang sudah difilter */}
             <SuggestionMenuController
               triggerCharacter="/"
-              getItems={async (query) =>
-                filterSuggestionItems(
-                  [
-                    ...getDefaultReactSlashMenuItems(editor),
-                    ...getCustomAISlashMenuItems(),
-                  ],
-                  query,
-                )
-              }
+              getItems={React.useCallback(async (query: string) => {
+                const aiItems = getCustomAISlashMenuItems;
+                const defaultItems = getFilteredSlashMenuItems(editor);
+                const allItems = [...aiItems, ...defaultItems];
+                
+                return filterSuggestionItems(allItems, query);
+              }, [editor, getCustomAISlashMenuItems, getFilteredSlashMenuItems])}
             />
           </BlockNoteView>
         </ScrollArea>
@@ -965,64 +623,52 @@ export default function BlockNoteEditorComponent({
       >
         <Stack gap="lg">
           {!generatedContent ? (
-            /* Input dan Template Selection */
+            /* Template Selection */
             <>
-              {/* Input Prompt */}
-              <Stack gap="sm">
-                <Text fw={500} size="md">
-                  Masukkan topik atau kata kunci:
-                </Text>
-                <Textarea
-                  placeholder="Contoh: Artificial Intelligence, Teknologi Blockchain, Tutorial React, dll..."
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  minRows={3}
-                  maxRows={5}
-                  radius="md"
-                  size="md"
-                  styles={{
-                    input: {
-                      fontSize: '16px',
-                      lineHeight: '1.5',
-                    }
-                  }}
-                />
-              </Stack>
-
-              {/* Info Box */}
-              <Paper p="md" radius="md" bg="blue.0">
-                <Stack gap="xs">
+              {/* Custom Prompt Input - Diperbesar */}
+              <Paper p="lg" radius="md" withBorder>
+                <Stack gap="md">
                   <Group gap="xs">
-                    <IconBulb size={16} style={{ color: '#007BFF' }} />
-                    <Text size="sm" fw={500} c="blue">
-                      Tips untuk hasil optimal:
+                    <IconEdit size={20} />
+                    <Text fw={500} size="lg">
+                      Topik atau Kata Kunci
                     </Text>
                   </Group>
-                  <Text size="xs" c="blue">
-                    • Berikan topik yang spesifik untuk konten yang lebih fokus
-                    • Gunakan bahasa Indonesia atau Inggris
-                    • Semakin detail input Anda, semakin baik hasil AI
+                  
+                  <Textarea
+                    placeholder="Masukkan topik yang ingin Anda buat strukturnya atau kontennya..."
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    minRows={5}
+                    maxRows={8}
+                    autosize
+                    style={{
+                      fontSize: '16px',
+                    }}
+                  />
+                  <Text size="sm" c="dimmed">
+                    💡 Tip: Untuk mode "Struktur" - masukkan topik umum. Untuk mode "Konten" - masukkan bab/sub bab spesifik yang ingin diisi.
                   </Text>
                 </Stack>
               </Paper>
 
-              {/* AI Templates Grid */}
-              <Stack gap="sm">
-                <Text fw={500} size="md" c="dimmed">
-                  Pilih template konten:
+              {/* AI Templates Grid - Hanya 2 template */}
+              <Stack gap="md">
+                <Text fw={500} size="lg" c="dimmed">
+                  Pilih mode generate:
                 </Text>
                 
-                <SimpleGrid cols={3} spacing="md">
+                <SimpleGrid cols={2} spacing="lg">
                   {aiTemplates.map((template) => (
                     <Card
                       key={template.type}
-                      p="md"
+                      p="xl"
                       withBorder
-                      radius="md"
+                      radius="lg"
                       style={{
                         cursor: "pointer",
                         transition: 'all 0.2s ease',
-                        height: '120px',
+                        height: '140px',
                       }}
                       className="hover:transform hover:scale-105 hover:shadow-lg"
                       onClick={() => {
@@ -1030,19 +676,19 @@ export default function BlockNoteEditorComponent({
                         handleAIGeneration(finalPrompt, template.type);
                       }}
                     >
-                      <Stack gap="xs" align="center" justify="center" h="100%">
+                      <Stack gap="md" align="center" justify="center" h="100%">
                         <ThemeIcon 
-                          size="lg" 
+                          size="xl" 
                           color={template.color} 
                           variant="light"
-                          radius="md"
+                          radius="lg"
                         >
-                          <template.icon size={20} />
+                          <template.icon size={24} />
                         </ThemeIcon>
-                        <Text size="sm" fw={500} ta="center" lh={1.2}>
+                        <Text size="lg" fw={600} ta="center" lh={1.2}>
                           {template.title}
                         </Text>
-                        <Text size="xs" c="dimmed" ta="center">
+                        <Text size="sm" c="dimmed" ta="center">
                           {template.description}
                         </Text>
                       </Stack>
@@ -1079,71 +725,47 @@ export default function BlockNoteEditorComponent({
                   {({ copied, copy }) => (
                     <Button
                       leftSection={copied ? <IconCheck size={16} /> : <IconCopy size={16} />}
-                      color={copied ? 'teal' : 'blue'}
                       variant="light"
-                      onClick={copy}
+                      color={copied ? "green" : "blue"}
                       size="sm"
+                      onClick={copy}
                     >
-                      {copied ? 'Disalin!' : 'Salin Semua'}
+                      {copied ? "Tersalin!" : "Copy"}
                     </Button>
                   )}
                 </CopyButton>
               </Group>
-
-              <Textarea
-                value={generatedContent}
-                readOnly
-                minRows={15}
-                maxRows={25}
-                radius="md"
-                styles={{
-                  input: {
-                    background: computedColorScheme === "dark" ? "#2a2a2a" : "#f8f9fa",
-                    fontFamily: 'Georgia, "Times New Roman", serif',
-                    fontSize: '15px',
-                    lineHeight: '1.6',
-                    padding: '16px',
-                    border: `2px solid ${computedColorScheme === "dark" ? "#404040" : "#e9ecef"}`,
-                  }
+              
+              <Paper 
+                p="xl" 
+                radius="lg" 
+                withBorder 
+                style={{ 
+                  maxHeight: "500px", 
+                  overflow: "auto",
+                  background: computedColorScheme === "dark" ? "#1a1a1a" : "#f8f9fa",
                 }}
-              />
-
-              <Paper p="md" radius="md" bg="green.0">
-                <Group gap="md">
-                  <IconBulb size={20} style={{ color: '#28a745' }} />
-                  <div>
-                    <Text size="sm" c="green" fw={500}>
-                      Konten siap dimasukkan!
-                    </Text>
-                    <Text size="xs" c="green">
-                      Klik "Masukkan ke Editor" untuk menambahkan konten ini langsung ke BlockNote editor dengan struktur heading otomatis
-                    </Text>
-                  </div>
-                </Group>
+              >
+                <Text size="md" style={{ whiteSpace: "pre-wrap", lineHeight: 1.8, fontSize: '15px' }}>
+                  {generatedContent}
+                </Text>
               </Paper>
-
-              <Group justify="space-between" gap="md">
-                <Group gap="md">
-                  <Button 
-                    variant="light" 
-                    color="gray" 
-                    onClick={() => {
-                      setGeneratedContent("");
-                      // Reset prompt untuk generate baru
-                      setPrompt("");
-                    }}
-                    leftSection={<IconPencil size={16} />}
-                  >
-                    Generate Baru
-                  </Button>
-                </Group>
+              
+              <Group justify="space-between">
+                <Button
+                  variant="light"
+                  onClick={closeModalAndReset}
+                  color="gray"
+                >
+                  Buat Lagi
+                </Button>
                 
-                <Button 
+                <Button
+                  leftSection={<IconEdit size={16} />}
+                  onClick={insertContentToEditor}
+                  size="md"
                   variant="gradient"
                   gradient={{ from: 'blue', to: 'cyan' }}
-                  size="md"
-                  onClick={insertContentToEditor}
-                  leftSection={<IconSparkles size={18} />}
                 >
                   Masukkan ke Editor
                 </Button>
