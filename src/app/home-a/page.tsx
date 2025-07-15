@@ -276,7 +276,7 @@ export default function Home() {
                 {headings.length === 0 ? (
                   <Box ta="center" py="md">
                     <Text size="xs" c="dimmed" mb="xs">
-                      📋 Outline artikel akan muncul di sini
+                      Outline artikel akan muncul di sini
                     </Text>
                     <Text size="xs" c="dimmed">
                       Gunakan AI untuk membuat konten dengan heading

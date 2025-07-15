@@ -95,29 +95,58 @@ export default function BlockNoteEditorComponent({
       
       switch (type) {
         case "blog":
-          systemPrompt = `Tulis artikel blog komprehensif dan LENGKAP tentang: ${prompt}. 
+          systemPrompt = `Tulis artikel blog yang SANGAT KOMPREHENSIF dan DETAIL tentang: ${prompt}. 
+          
+          INSTRUKSI KHUSUS: 
+          - Berikan penjelasan yang LENGKAP dan TUNTAS untuk SETIAP poin
+          - Jangan berhenti di tengah-tengah atau memotong penjelasan
+          - Setiap sub bab minimal 2-3 paragraf dengan detail mendalam
+          - Berikan contoh konkret dan actionable untuk setiap konsep
+          - Pastikan TIDAK ADA yang tertinggal atau menggantung
+          
           WAJIB gunakan format markdown dengan struktur LENGKAP:
-          # Judul Utama
           
-          ## Pendahuluan
-          [konten pendahuluan yang menarik dan detail, minimal 2-3 paragraf]
+          # Bab 1: Pengenalan ${prompt}
           
-          ## Poin Utama 1
-          [konten detail dengan penjelasan LENGKAP, contoh, dan analisis mendalam]
+          ## Sub Bab 1.1: Latar Belakang dan Pentingnya
+          [Jelaskan LENGKAP mengapa topik ini penting, latar belakang sejarah, dan relevansi di masa kini. Minimal 3 paragraf dengan detail mendalam]
           
-          ## Poin Utama 2  
-          [konten detail dengan penjelasan LENGKAP, contoh, dan analisis mendalam]
+          ## Sub Bab 1.2: Definisi dan Konsep Dasar
+          [Berikan definisi yang komprehensif, konsep-konsep dasar yang perlu dipahami, dan terminologi penting. Jelaskan dengan detail dan contoh]
           
-          ## Poin Utama 3
-          [konten detail dengan penjelasan LENGKAP, contoh, dan analisis mendalam]
+          # Bab 2: Analisis Mendalam dan Implementasi
           
-          ## Poin Utama 4
-          [konten detail dengan penjelasan LENGKAP jika diperlukan]
+          ## Sub Bab 2.1: Cara Kerja dan Mekanisme
+          [Jelaskan DETAIL bagaimana topik ini bekerja, step-by-step process, dan mekanisme di baliknya. Berikan contoh konkret dan analogi yang mudah dipahami]
           
-          ## Kesimpulan
-          [kesimpulan yang kuat, actionable, dan komprehensif]
+          ## Sub Bab 2.2: Best Practices dan Strategi
+          [Berikan panduan praktis, best practices, strategi implementasi yang terbukti efektif. Sertakan tips dan trik yang actionable]
           
-          Gunakan bahasa Indonesia yang profesional. PENTING: Berikan penjelasan yang LENGKAP dan TUNTAS untuk setiap bagian. Jangan berhenti di tengah-tengah. Pastikan setiap section memiliki penjelasan yang detail dan komprehensif.`;
+          ## Sub Bab 2.3: Studi Kasus dan Contoh Nyata
+          [Berikan 2-3 studi kasus nyata dengan analisis mendalam. Jelaskan apa yang bisa dipelajari dari setiap kasus]
+          
+          # Bab 3: Tantangan dan Solusi
+          
+          ## Sub Bab 3.1: Tantangan Umum dan Cara Mengatasinya
+          [Identifikasi tantangan-tantangan yang sering dihadapi dan berikan solusi praktis untuk mengatasinya]
+          
+          ## Sub Bab 3.2: Tips Optimasi dan Improvement
+          [Berikan tips untuk optimasi, improvement, dan cara mencapai hasil yang lebih baik]
+          
+          # Bab 4: Kesimpulan dan Rekomendasi
+          
+          ## Sub Bab 4.1: Rangkuman Poin Kunci
+          [Rangkum semua poin penting yang telah dibahas dengan jelas dan sistematis]
+          
+          ## Sub Bab 4.2: Rekomendasi dan Langkah Selanjutnya
+          [Berikan rekomendasi actionable dan langkah-langkah konkret yang bisa diambil pembaca]
+          
+          PENTING: 
+          - Setiap sub bab harus LENGKAP dengan penjelasan detail minimal 150-200 kata
+          - Jangan gunakan placeholder atau kalimat yang tidak selesai
+          - Berikan contoh konkret di setiap bagian
+          - Pastikan pembaca mendapat value yang maksimal
+          - LANJUTKAN SAMPAI SELESAI, jangan berhenti di tengah-tengah`;
           break;
           
         case "summary":
@@ -141,26 +170,63 @@ export default function BlockNoteEditorComponent({
           break;
           
         case "explain":
-          systemPrompt = `Jelaskan dengan LENGKAP dan TUNTAS tentang: ${prompt}. 
+          systemPrompt = `Jelaskan dengan SANGAT DETAIL dan KOMPREHENSIF tentang: ${prompt}. 
+          
+          INSTRUKSI KHUSUS:
+          - Jelaskan SETIAP aspek dengan detail mendalam
+          - Berikan contoh konkret untuk SETIAP konsep
+          - Jangan tinggalkan pertanyaan yang belum terjawab
+          - Pastikan pembaca benar-benar memahami topik secara menyeluruh
+          - Setiap sub bab minimal 2-3 paragraf dengan penjelasan tuntas
+          
           WAJIB gunakan format markdown:
-          # Penjelasan: ${prompt}
           
-          ## Definisi Dasar
-          [penjelasan dasar yang LENGKAP dengan bahasa sederhana]
+          # Bab 1: Pengenalan Komprehensif ${prompt}
           
-          ## Cara Kerja
-          [penjelasan DETAIL dan LENGKAP tentang mekanisme atau proses]
+          ## Sub Bab 1.1: Definisi dan Konsep Fundamental
+          [Jelaskan definisi yang sangat detail, konsep dasar, dan terminologi penting. Berikan etimologi jika perlu dan hubungkan dengan konsep yang sudah dikenal pembaca]
           
-          ## Contoh Praktis
-          [berikan 3-5 contoh nyata yang LENGKAP dan mudah dipahami]
+          ## Sub Bab 1.2: Sejarah dan Evolusi
+          [Jelaskan perkembangan historis, milestone penting, dan bagaimana konsep ini berkembang hingga sekarang]
           
-          ## Manfaat dan Kegunaan
-          [penjelasan LENGKAP tentang kegunaan praktis dalam kehidupan]
+          ## Sub Bab 1.3: Mengapa Ini Penting?
+          [Jelaskan relevansi, dampak, dan mengapa pembaca perlu memahami topik ini]
           
-          ## Tips dan Rekomendasi
-          [berikan tips praktis yang LENGKAP dan actionable]
+          # Bab 2: Mekanisme dan Cara Kerja Detail
           
-          PENTING: Gunakan bahasa sederhana tapi berikan penjelasan yang LENGKAP dan TUNTAS. Jangan berhenti sebelum selesai menjelaskan semua aspek penting.`;
+          ## Sub Bab 2.1: Prinsip Kerja Fundamental
+          [Jelaskan bagaimana ini bekerja step-by-step dengan detail yang sangat jelas. Gunakan analogi jika membantu]
+          
+          ## Sub Bab 2.2: Komponen dan Elemen Penting
+          [Breakdown semua komponen penting dan jelaskan peran masing-masing dengan detail]
+          
+          ## Sub Bab 2.3: Proses dan Alur Kerja
+          [Jelaskan alur kerja lengkap dari awal hingga akhir dengan contoh konkret]
+          
+          # Bab 3: Aplikasi dan Implementasi Praktis
+          
+          ## Sub Bab 3.1: Contoh Nyata dalam Kehidupan Sehari-hari
+          [Berikan minimal 3-5 contoh konkret bagaimana ini diterapkan dalam kehidupan nyata]
+          
+          ## Sub Bab 3.2: Langkah-langkah Implementasi
+          [Berikan panduan praktis step-by-step bagaimana menerapkan atau menggunakan konsep ini]
+          
+          ## Sub Bab 3.3: Tips dan Best Practices
+          [Berikan tips praktis, best practices, dan hal-hal yang perlu diperhatikan]
+          
+          # Bab 4: Troubleshooting dan FAQ
+          
+          ## Sub Bab 4.1: Kesalahan Umum dan Cara Menghindarinya
+          [Identifikasi kesalahan yang sering terjadi dan berikan solusi preventif]
+          
+          ## Sub Bab 4.2: FAQ dan Jawaban Mendalam
+          [Jawab pertanyaan-pertanyaan yang sering muncul dengan penjelasan detail]
+          
+          PENTING: 
+          - Gunakan bahasa yang mudah dipahami tapi tetap akurat secara teknis
+          - Setiap sub bab minimal 150-200 kata dengan penjelasan mendalam
+          - Berikan contoh konkret dan relatable di setiap bagian
+          - PASTIKAN TIDAK ADA yang tertinggal atau menggantung`;
           break;
           
         case "creative":
@@ -212,8 +278,10 @@ export default function BlockNoteEditorComponent({
       const { text } = await generateText({
         model: aiModel,
         prompt: systemPrompt,
-        maxTokens: 3000, // Ditingkatkan dari 1200 ke 3000 untuk konten yang lebih lengkap
-        temperature: 0.7, // Ditambahkan untuk variasi yang lebih baik
+        maxTokens: 4000, // Ditingkatkan lagi dari 3000 ke 4000 untuk konten yang lebih lengkap
+        temperature: 0.7,
+        presencePenalty: 0.1, // Mencegah repetisi
+        frequencyPenalty: 0.1, // Mendorong variasi konten
       });
       
       setGeneratedContent(text);
@@ -701,7 +769,7 @@ export default function BlockNoteEditorComponent({
   // Enhanced AI Templates dengan bahasa Indonesia
   const aiTemplates = [
     {
-      title: "✍️ Artikel Umum",
+      title: "Artikel Umum",
       description: "Generate konten apapun",
       type: "general",
       color: "blue",
@@ -709,7 +777,7 @@ export default function BlockNoteEditorComponent({
       defaultPrompt: "Dampak teknologi AI terhadap dunia kerja"
     },
     {
-      title: "📝 Blog Post",
+      title: "Blog Post",
       description: "Buat artikel blog lengkap",
       type: "blog", 
       color: "green",
@@ -717,7 +785,7 @@ export default function BlockNoteEditorComponent({
       defaultPrompt: "Panduan lengkap memulai karir di bidang teknologi"
     },
     {
-      title: "📋 Ringkasan",
+      title: "Ringkasan",
       description: "Ringkasan singkat dan padat",
       type: "summary",
       color: "orange",
@@ -725,7 +793,7 @@ export default function BlockNoteEditorComponent({
       defaultPrompt: "Tren teknologi terbaru tahun 2024"
     },
     {
-      title: "🎯 Penjelasan",
+      title: "Penjelasan",
       description: "Penjelasan topik kompleks",
       type: "explain",
       color: "purple",
@@ -733,7 +801,7 @@ export default function BlockNoteEditorComponent({
       defaultPrompt: "Blockchain dan cryptocurrency untuk pemula"
     },
     {
-      title: "🚀 Konten Kreatif",
+      title: "Konten Kreatif",
       description: "Tulisan kreatif dan menarik",
       type: "creative",
       color: "pink",
@@ -902,7 +970,7 @@ export default function BlockNoteEditorComponent({
               {/* Input Prompt */}
               <Stack gap="sm">
                 <Text fw={500} size="md">
-                  🎯 Masukkan topik atau kata kunci:
+                  Masukkan topik atau kata kunci:
                 </Text>
                 <Textarea
                   placeholder="Contoh: Artificial Intelligence, Teknologi Blockchain, Tutorial React, dll..."
@@ -941,7 +1009,7 @@ export default function BlockNoteEditorComponent({
               {/* AI Templates Grid */}
               <Stack gap="sm">
                 <Text fw={500} size="md" c="dimmed">
-                  🎨 Pilih template konten:
+                  Pilih template konten:
                 </Text>
                 
                 <SimpleGrid cols={3} spacing="md">
