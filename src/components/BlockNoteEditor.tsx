@@ -139,19 +139,28 @@ export default function BlockNoteEditorComponent({
     };
   }, []);
 
-  // Custom AI Slash Menu Items - dengan ikon sparkles seperti Gemini
-  const getCustomAISlashMenuItems = React.useMemo((): DefaultReactSuggestionItem[] => {
+  // Custom AI Slash Menu Items - mencoba dengan property icon yang benar
+  const getCustomAISlashMenuItems = React.useMemo(() => {
     if (!aiModel) return [];
     
     return [
       {
-        title: "✨ AI Assistant",
+        title: "AI Assistant",
         onItemClick: () => {
           openAIModal();
         },
         aliases: ["ai", "assistant", "generate", "write", "tulis"],
         group: "Headings",
-        subtext: "Buat konten dengan bantuan AI",
+        subtext: "Buat dengan bantuan AI",
+        // Mencoba beberapa kemungkinan property untuk ikon
+        icon: <IconSparkles size={18} />,
+        // Alternatif lain yang mungkin
+        render: () => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <IconSparkles size={18} color="#6366f1" />
+            <span>AI Assistant</span>
+          </div>
+        ),
       }
     ];
   }, [aiModel, openAIModal]);
