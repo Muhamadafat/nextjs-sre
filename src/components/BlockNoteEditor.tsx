@@ -94,7 +94,7 @@ export default function BlockNoteEditorComponent({
   const aiTemplates = [
     {
       title: "Struktur",
-      description: "Generate outline/bab dan sub bab",
+      description: "Generate untuk bab dan sub bab",
       type: "structure",
       color: "blue",
       icon: IconList,
@@ -102,7 +102,7 @@ export default function BlockNoteEditorComponent({
     },
     {
       title: "Konten", 
-      description: "Generate konten detail untuk bab yang sudah ada",
+      description: "Generate konten detail ",
       type: "content",
       color: "green", 
       icon: IconEdit,
@@ -148,17 +148,17 @@ export default function BlockNoteEditorComponent({
     
     return [
       {
-        title: "AI Assistant",
+        title: "AI Generator",
         onItemClick: () => {
           openAIModal();
         },
         aliases: ["ai", "assistant", "generate", "write", "tulis"],
         group: "AI Tools",
-        subtext: "Buat konten baru dengan AI",
+        subtext: "Buat baru dengan AI",
         icon: <IconSparkles size={18} />,
       },
       {
-        title: "AI Continue",
+        title: "AI Lanjutan",
         onItemClick: () => {
           // Set mode continue untuk tidak clear editor
           setAIMode("continue");
@@ -166,7 +166,7 @@ export default function BlockNoteEditorComponent({
         },
         aliases: ["continue", "lanjut", "append", "tambah"],
         group: "AI Tools", 
-        subtext: "Lanjutkan konten yang ada",
+        subtext: "Lanjutkan Blok yang sudah ada",
         icon: <IconEdit size={18} />,
       }
     ];
@@ -1049,8 +1049,8 @@ PENTING:
                                   return (
                                     <Stack gap={8}>
                                       <Text size="sm" c="green">
-                                        📋 Struktur terdeteksi: <strong>{existing.mainTitle}</strong>
-                                      </Text>
+                                        📋 Struktur terdeteksi : <strong>{existing.mainTitle}</strong>
+                                      </Text> 
                                       <Text size="sm" c="green">
                                         📝 {existing.chapters?.length || 0} Bab | {existing.subChapters?.length || 0} Sub Bab
                                       </Text>
@@ -1112,7 +1112,7 @@ PENTING:
                                 } else {
                                   return (
                                     <Text size="sm" c="green">
-                                      Konten baru akan ditambahkan di akhir editor tanpa menghapus yang sudah ada
+                                      Konten baru akan ditambahkan tanpa menghapus yang sudah ada
                                     </Text>
                                   );
                                 }
@@ -1130,7 +1130,7 @@ PENTING:
                   </Text>
                   
                   <Textarea
-                    placeholder="Contoh: Panduan memulai karir di bidang teknologi, Tutorial belajar pemrograman, Strategi digital marketing 2024..."
+                    placeholder="Contoh : Panduan memulai karir di bidang teknologi, Tutorial belajar pemrograman, Strategi digital marketing 2024..."
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     autosize
@@ -1147,7 +1147,7 @@ PENTING:
                   />
                   
                   <Text size="sm" c="dimmed">
-                    <strong>Tips:</strong> 
+                    <strong>Tips : </strong> 
                     {aiMode === "continue" ? (
                       (() => {
                         const existing = analyzeExistingContent();
@@ -1181,7 +1181,7 @@ PENTING:
                         return [
                           {
                             title: "Isi Konten", 
-                            description: "Isi detail untuk bab/sub bab yang sudah ada",
+                            description: "Isi detail dari bab atau sub bab yang sudah ada",
                             type: "content",
                             color: "green", 
                             icon: IconEdit,
@@ -1189,7 +1189,7 @@ PENTING:
                           },
                           {
                             title: "Struktur Tambahan",
-                            description: "Tambah bab/sub bab baru ke struktur",
+                            description: "Tambah bab atau sub bab baru ke struktur",
                             type: "structure",
                             color: "blue",
                             icon: IconList,

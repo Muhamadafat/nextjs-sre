@@ -623,7 +623,7 @@ export default function Home() {
                         <IconBrain size={48} />
                       </ThemeIcon>
                       <Text fw={600} mb="xs">
-                        🤖 Asisten AI
+                        🤖 Assistant AI
                       </Text>
                       <Text size="sm" c="dimmed" mb="md">
                         AI Assistant terintegrasi dengan editor untuk membantu menulis konten
