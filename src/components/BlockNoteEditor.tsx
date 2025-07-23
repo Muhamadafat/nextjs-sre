@@ -187,19 +187,33 @@ export default function BlockNoteEditorComponent({
     }
   ];
 
-  // Utility function to extract text from any block
+  // Utility function to extract text from any block - FIXED
   const extractTextFromBlock = (block: any): string => {
     try {
-      if (!block?.content || !Array.isArray(block.content)) return "";
+      if (!block) return "";
       
-      return block.content
-        .map((item: any) => {
-          if (typeof item === 'string') return item;
-          if (item && typeof item === 'object' && 'text' in item) return item.text;
-          return '';
-        })
-        .join('').trim();
+      // Handle different content structures
+      if (typeof block.content === 'string') {
+        return block.content;
+      }
+      
+      if (Array.isArray(block.content)) {
+        return block.content
+          .map((item: any) => {
+            if (typeof item === 'string') return item;
+            if (item && typeof item === 'object') {
+              // Handle different text content structures
+              if ('text' in item) return item.text;
+              if ('content' in item && typeof item.content === 'string') return item.content;
+            }
+            return '';
+          })
+          .join('').trim();
+      }
+      
+      return "";
     } catch (error) {
+      console.error("Error extracting text from block:", error);
       return "";
     }
   };
@@ -247,8 +261,6 @@ export default function BlockNoteEditorComponent({
       
       // Enhanced logic for paragraphs - more permissive
       if (block.type === "paragraph") {
-        if (!block.content || !Array.isArray(block.content)) return false;
-        
         const text = extractTextFromBlock(block);
         
         // Show continue button for any paragraph with content (even short ones)
@@ -271,12 +283,14 @@ export default function BlockNoteEditorComponent({
     }
   };
 
-  // Parse inline formatting
+  // Parse inline formatting - FIXED
   const parseInlineFormatting = (text: string): any[] => {
-    if (!text || typeof text !== 'string') return [{ type: "text", text: text || "" }];
+    if (!text || typeof text !== 'string') {
+      return [{ type: "text", text: text || "" }];
+    }
     
-    // Simple implementation - just return text without complex formatting
-    return [{ type: "text", text: text }];
+    // Simple but robust implementation
+    return [{ type: "text", text: text.trim() }];
   };
 
   // Find matching heading
@@ -543,31 +557,80 @@ export default function BlockNoteEditorComponent({
     }
   };
 
-  // Insert AI content at cursor
+  // Insert AI content at cursor - FIXED
   const insertAIContentAtCursor = async (text: string, currentBlock: any) => {
     try {
+      if (!text || !text.trim()) {
+        console.warn("No text to insert");
+        return;
+      }
+      
       const lines = text.split('\n').filter((line: string) => line.trim());
-      const blocksToInsert = lines.map((line: string) => ({
-        type: "paragraph" as const,
-        content: parseInlineFormatting(line.trim()),
-        props: {},
-      }));
+      
+      if (lines.length === 0) {
+        console.warn("No valid lines to insert");
+        return;
+      }
+      
+      const blocksToInsert: any[] = lines.map((line: string) => {
+        const trimmedLine = line.trim();
+        
+        // Parse markdown-style headings
+        const headingMatch = trimmedLine.match(/^(#{1,6})\s+(.+)$/);
+        if (headingMatch) {
+          const level = Math.min(headingMatch[1].length, 3) as 1 | 2 | 3;
+          const headingText = headingMatch[2];
+          return {
+            type: "heading" as const,
+            content: headingText,
+            props: { level },
+          };
+        }
+        
+        // Parse bullet list items
+        if (trimmedLine.match(/^[\*\-]\s+/)) {
+          const listText = trimmedLine.replace(/^[\*\-]\s+/, '');
+          return {
+            type: "bulletListItem" as const,
+            content: listText,
+          };
+        }
+        
+        // Parse numbered list items
+        if (trimmedLine.match(/^\d+\.\s+/)) {
+          const listText = trimmedLine.replace(/^\d+\.\s+/, '');
+          return {
+            type: "numberedListItem" as const,
+            content: listText,
+          };
+        }
+        
+        // Default to paragraph
+        return {
+          type: "paragraph" as const,
+          content: trimmedLine,
+        };
+      });
 
       if (blocksToInsert.length > 0) {
-        editor.insertBlocks(blocksToInsert as any, currentBlock, "after");
+        // Use insertBlocks method properly
+        await editor.insertBlocks(blocksToInsert, currentBlock, "after");
         
+        // Set cursor position to the last inserted block
         setTimeout(() => {
           try {
             const allBlocks = editor.document;
             const currentIndex = allBlocks.findIndex(block => block.id === currentBlock.id);
             const lastInsertedIndex = currentIndex + blocksToInsert.length;
-            const lastInsertedBlock = allBlocks[lastInsertedIndex];
             
-            if (lastInsertedBlock) {
-              editor.setTextCursorPosition(lastInsertedBlock, "end");
+            if (lastInsertedIndex < allBlocks.length) {
+              const lastInsertedBlock = allBlocks[lastInsertedIndex];
+              if (lastInsertedBlock) {
+                editor.setTextCursorPosition(lastInsertedBlock, "end");
+              }
             }
           } catch (e) {
-            console.log("Cursor positioning adjustment");
+            console.log("Cursor positioning adjustment:", e);
           }
         }, 100);
       }
@@ -584,6 +647,7 @@ export default function BlockNoteEditorComponent({
     
     if (!aiModel || !currentBlock) {
       console.error("AI model or current block not available");
+      alert("❌ AI model tidak tersedia. Silakan periksa konfigurasi API key.");
       return;
     }
 
@@ -753,8 +817,11 @@ INSTRUKSI:
         frequencyPenalty: 0.1,
       });
 
-      if (text) {
+      if (text && text.trim()) {
         await insertAIContentAtCursor(text, currentBlock);
+      } else {
+        console.warn("No text generated from AI");
+        alert("⚠️ AI tidak menghasilkan konten. Silakan coba lagi.");
       }
 
     } catch (error) {
@@ -830,7 +897,10 @@ INSTRUKSI:
 
   // AI Generation function
   const generateAIContent = async (prompt: string, type: string = "structure") => {
-    if (!aiModel) return null;
+    if (!aiModel) {
+      alert("❌ AI model tidak tersedia. Silakan periksa konfigurasi API key.");
+      return null;
+    }
     
     setIsAILoading(true);
     try {
@@ -924,15 +994,21 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
       return text;
     } catch (error) {
       console.error("AI generation failed:", error);
+      alert("❌ Gagal menghasilkan konten AI. Silakan coba lagi.");
       return null;
     } finally {
       setIsAILoading(false);
     }
   };
 
-  // Smart content merging
-  const insertContentWithSmartMerging = () => {
+  // Smart content merging - FIXED
+  const insertContentWithSmartMerging = async () => {
     try {
+      if (!generatedContent || !generatedContent.trim()) {
+        console.warn("No content to merge");
+        return;
+      }
+
       const currentBlocks = editor.document;
       const generatedLines = generatedContent.split('\n').filter((line: string) => line.trim());
       
@@ -971,16 +1047,15 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
               }
               
               contentToInsert.push({
-                type: "paragraph",
-                content: parseInlineFormatting(contentLine),
-                props: {},
+                type: "paragraph" as const,
+                content: contentLine,
               });
               i++;
             }
             
             if (contentToInsert.length > 0) {
               const targetBlock = currentBlocks[currentBlockIndex];
-              editor.insertBlocks(contentToInsert as any, targetBlock, "after");
+              await editor.insertBlocks(contentToInsert, targetBlock, "after");
               currentBlockIndex += contentToInsert.length + 1;
             }
           } else {
@@ -992,78 +1067,90 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
       }
     } catch (error) {
       console.error("Error in smart merging:", error);
+      // Fallback to simple insertion
       const lines = generatedContent.split('\n').filter((line: string) => line.trim());
-      const blocksToInsert = lines.map((line: string) => ({
-        type: "paragraph",
-        content: parseInlineFormatting(line.trim()),
-        props: {},
+      const blocksToInsert: any[] = lines.map((line: string) => ({
+        type: "paragraph" as const,
+        content: line.trim(),
       }));
       
       if (blocksToInsert.length > 0) {
-        editor.insertBlocks(blocksToInsert as any, editor.document[editor.document.length - 1], "after");
+        const lastBlock = editor.document[editor.document.length - 1];
+        await editor.insertBlocks(blocksToInsert, lastBlock, "after");
       }
     }
   };
 
-  // Insert content to editor
-  const insertContentToEditor = (shouldAppend: boolean = false) => {
-    if (!generatedContent) return;
+  // Insert content to editor - COMPLETELY FIXED
+  const insertContentToEditor = async (shouldAppend: boolean = false) => {
+    if (!generatedContent || !generatedContent.trim()) {
+      console.warn("No generated content to insert");
+      return;
+    }
 
     try {
       if (aiMode === "continue") {
-        insertContentWithSmartMerging();
+        await insertContentWithSmartMerging();
         closeModalAndReset();
         return;
       }
       
-      let blocksToInsert: any[] = [];
       const lines = generatedContent.split('\n').filter((line: string) => line.trim());
+      
+      if (lines.length === 0) {
+        console.warn("No valid lines to insert");
+        return;
+      }
+      
+      const blocksToInsert: any[] = [];
       
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
         
-        let blockType: string = "paragraph";
-        let content: any = line;
-        let props: any = {};
-        
-        if (line.match(/^# .+/)) {
-          blockType = "heading";
-          props = { level: 1 };
-          content = parseInlineFormatting(line.replace(/^# /, '').trim());
-        } else if (line.match(/^## .+/)) {
-          blockType = "heading";
-          props = { level: 2 };
-          content = parseInlineFormatting(line.replace(/^## /, '').trim());
-        } else if (line.match(/^### .+/)) {
-          blockType = "heading";
-          props = { level: 3 };
-          content = parseInlineFormatting(line.replace(/^### /, '').trim());
-        } else if (line.match(/^#### .+/)) {
-          blockType = "heading";
-          props = { level: 4 };
-          content = parseInlineFormatting(line.replace(/^#### /, '').trim());
-        } else if (line.match(/^\* .+/) || line.match(/^- .+/)) {
-          blockType = "bulletListItem";
-          content = parseInlineFormatting(line.replace(/^[\*-] /, '').trim());
-        } else if (line.match(/^\d+\. .+/)) {
-          blockType = "numberedListItem";
-          content = parseInlineFormatting(line.replace(/^\d+\. /, '').trim());
-        } else {
-          blockType = "paragraph";
-          content = parseInlineFormatting(line);
+        // Parse headings
+        const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
+        if (headingMatch) {
+          const level = Math.min(headingMatch[1].length, 3) as 1 | 2 | 3;
+          const headingText = headingMatch[2].trim();
+          
+          blocksToInsert.push({
+            type: "heading" as const,
+            content: headingText,
+            props: { level },
+          });
         }
-        
-        blocksToInsert.push({
-          type: blockType,
-          content: content,
-          props: props,
-        });
+        // Parse bullet lists
+        else if (line.match(/^[\*\-]\s+/)) {
+          const listText = line.replace(/^[\*\-]\s+/, '').trim();
+          blocksToInsert.push({
+            type: "bulletListItem" as const,
+            content: listText,
+          });
+        }
+        // Parse numbered lists
+        else if (line.match(/^\d+\.\s+/)) {
+          const listText = line.replace(/^\d+\.\s+/, '').trim();
+          blocksToInsert.push({
+            type: "numberedListItem" as const,
+            content: listText,
+          });
+        }
+        // Default paragraph
+        else {
+          blocksToInsert.push({
+            type: "paragraph" as const,
+            content: line,
+          });
+        }
       }
       
       if (blocksToInsert.length > 0) {
         if (!shouldAppend) {
-          editor.replaceBlocks(editor.document, blocksToInsert as any);
+          // Replace all content
+          await editor.replaceBlocks(editor.document, blocksToInsert);
+          
+          // Set cursor to the first block
           setTimeout(() => {
             try {
               const firstBlock = editor.document[0];
@@ -1071,19 +1158,24 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
                 editor.setTextCursorPosition(firstBlock, "start");
               }
             } catch (e) {
-              console.log("Cursor positioning adjustment");
+              console.log("Cursor positioning adjustment:", e);
             }
           }, 100);
         } else {
-          editor.insertBlocks(blocksToInsert as any, editor.document[editor.document.length - 1], "after");
+          // Append to existing content
+          const lastBlock = editor.document[editor.document.length - 1];
+          await editor.insertBlocks(blocksToInsert, lastBlock, "after");
+          
+          // Set cursor to the last inserted block
           setTimeout(() => {
             try {
-              const lastBlock = editor.document[editor.document.length - 1];
-              if (lastBlock) {
-                editor.setTextCursorPosition(lastBlock, "end");
+              const allBlocks = editor.document;
+              const lastInsertedBlock = allBlocks[allBlocks.length - 1];
+              if (lastInsertedBlock) {
+                editor.setTextCursorPosition(lastInsertedBlock, "end");
               }
             } catch (e) {
-              console.log("Cursor positioning adjustment");
+              console.log("Cursor positioning adjustment:", e);
             }
           }, 100);
         }
