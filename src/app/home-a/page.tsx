@@ -14,7 +14,7 @@ import NextImage from 'next/image';
 import { useState } from 'react';
 import Split from 'react-split';
 import knowledgeImage from '../imageCollection/graph.png';
-import myimage from '../imageCollection/LogoSRE_Fix.png';
+import myimage from '../imageCollection/logoSRE_Tulis.png';
 
 // Logo Component menggunakan LogoSRE_Fix.png
 function SmartResearchEngineLogo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {

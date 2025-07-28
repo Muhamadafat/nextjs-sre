@@ -177,7 +177,7 @@ function BlockNoteEditorComponent({
     },
   });
 
-  // AI Templates
+  // AI Templates - FIXED DESCRIPTIONS
   const aiTemplates = [
     {
       title: "Buat Struktur", 
@@ -189,7 +189,7 @@ function BlockNoteEditorComponent({
     },
     {
       title: "Isi Konten",
-      description: "Konten detail dan mendalam untuk topik",
+      description: "Konten paragraf lengkap tanpa heading/struktur",
       type: "content", 
       color: "green",
       icon: IconEdit,
@@ -427,6 +427,13 @@ function BlockNoteEditorComponent({
 
       await typeBlocks(blocksToType, currentBlock);
 
+      // TRIGGER CONTENT CHANGE AFTER TYPING
+      setTimeout(() => {
+        if (onContentChange) {
+          onContentChange(editor.document);
+        }
+      }, 100);
+
     } catch (error) {
       console.error("Error inserting content:", error);
     }
@@ -518,7 +525,8 @@ KONTEKS: ${contextText}
 INSTRUKSI:
 - Tulis 1-2 paragraf yang mengalir natural
 - Gunakan bahasa Indonesia yang natural
-- Berikan informasi yang valuable`;
+- Berikan informasi yang valuable
+- HANYA tulis dalam bentuk paragraf, jangan gunakan heading atau list`;
           break;
 
         case "summarize":
@@ -545,7 +553,8 @@ ${contextContent}
 INSTRUKSI:
 - Buat ringkasan dalam 2-3 paragraf
 - Tangkap poin-poin utama
-- Gunakan bahasa yang jelas dan ringkas`;
+- Gunakan bahasa yang jelas dan ringkas
+- HANYA tulis dalam bentuk paragraf, jangan gunakan heading atau list`;
           break;
 
         case "write_anything":
@@ -647,7 +656,7 @@ INSTRUKSI:
     };
   }, [editor, handleSelectionChange, isMounted]);
 
-  // AI Generation function
+  // AI Generation function - FIXED CONTENT MODE
   const generateAIContent = async (prompt: string, type: string = "structure") => {
     if (!aiModel) {
       alert("❌ AI model tidak tersedia. Silakan periksa konfigurasi API key.");
@@ -695,7 +704,8 @@ INSTRUKSI PENULISAN:
 
 KONTEKS TAMBAHAN: ${prompt}`;
       } else {
-        if (type === "content") {
+        if (type === "structure") {
+          // Mode Struktur - Generate outline dengan headings
           systemPrompt = `Buat outline struktur lengkap dengan heading dan subheading untuk topik: ${prompt}
 
 ATURAN STRUKTUR HEADING:
@@ -713,30 +723,41 @@ INSTRUKSI PENTING:
 
 TUGAS:
 Buat HANYA struktur heading untuk "${prompt}" tanpa konten apapun.`;
-        } else {
-          systemPrompt = `Buat outline lengkap dan terstruktur untuk topik: ${prompt}
 
-ATURAN STRUKTUR HEADING:
-- Gunakan # untuk judul utama (hanya 1)
-- Gunakan ## untuk bab-bab utama (level 2)
-- Gunakan ### untuk sub-bab (level 3)
-- Gunakan #### untuk detail bagian (level 4)
+        } else if (type === "content") {
+          // Mode Konten - Generate text paragraf saja tanpa struktur
+          systemPrompt = `Tulis artikel lengkap dalam bentuk paragraf tentang: ${prompt}
 
-INSTRUKSI PENTING:
-- HANYA tulis heading dan subheading
-- JANGAN tulis konten paragraf apapun
-- TIDAK ada penjelasan atau deskripsi
-- Buat struktur yang komprehensif dan logis
+INSTRUKSI SANGAT PENTING:
+- HANYA tulis dalam bentuk paragraf text biasa
+- JANGAN gunakan heading (#), sub-heading (##), atau format struktur apapun
+- JANGAN gunakan bullet points (•, -, *) atau numbered list (1., 2., 3.)
+- JANGAN gunakan format markdown apapun
+- Tulis konten yang mengalir dalam bentuk paragraf yang berkesinambungan
+- Gunakan bahasa Indonesia yang natural, formal, dan mudah dipahami
+- Buat 5-7 paragraf dengan konten yang mendalam dan informatif
+- Setiap paragraf minimal 4-5 kalimat yang substantial
+- Fokus pada konten yang valuable, detail, dan educational
+- Jangan gunakan format apapun selain text paragraf biasa
+
+FORMAT YANG DIINGINKAN:
+Paragraf pertama membahas pengenalan topik dengan detail yang komprehensif. Jelaskan konteks dan background yang relevan dengan topik yang dibahas.
+
+Paragraf kedua menjelaskan aspek pertama dari topik dengan detail yang mendalam. Berikan informasi yang specific dan actionable untuk pembaca.
+
+Paragraf ketiga menguraikan aspek kedua dengan contoh-contoh konkret dan practical. Pastikan informasi yang diberikan relevan dan berguna.
+
+Dan seterusnya untuk paragraf berikutnya...
 
 TUGAS:
-Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
+Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa format apapun.`;
         }
       }
 
       const { text } = await generateText({
         model: aiModel,
         prompt: systemPrompt,
-        maxTokens: aiMode === "continue" ? 4000 : 1000,
+        maxTokens: aiMode === "continue" ? 4000 : (type === "content" ? 1500 : 1000),
         temperature: 0.7,
         presencePenalty: 0.1,
         frequencyPenalty: 0.1,
@@ -786,6 +807,14 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
             });
           }
         }
+
+        // TRIGGER CONTENT CHANGE AFTER CLEARING
+        setTimeout(() => {
+          if (onContentChange) {
+            onContentChange(editor.document);
+          }
+        }, 50);
+
       } catch (error) {
         console.log("Editor clearing adjustment:", error);
       }
@@ -794,7 +823,7 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
     await generateAIContent(inputPrompt, type);
   };
 
-  // Insert content to editor
+  // Insert content to editor - FIXED WITH PROPER CONTENT CHANGE TRIGGER
   const insertContentToEditor = async (shouldAppend: boolean = false) => {
     if (!generatedContent || !generatedContent.trim()) {
       console.warn("No generated content to insert");
@@ -858,20 +887,10 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
               if (firstBlock) {
                 editor.setTextCursorPosition(firstBlock, "start");
               }
-            } catch (e) {
-              console.log("Cursor positioning adjustment:", e);
-            }
-          }, 100);
-        } else {
-          const lastBlock = editor.document[editor.document.length - 1];
-          await editor.insertBlocks(blocksToInsert, lastBlock, "after");
-          
-          setTimeout(() => {
-            try {
-              const allBlocks = editor.document;
-              const lastInsertedBlock = allBlocks[allBlocks.length - 1];
-              if (lastInsertedBlock) {
-                editor.setTextCursorPosition(lastInsertedBlock, "end");
+
+              // MANUALLY TRIGGER CONTENT CHANGE
+              if (onContentChange) {
+                onContentChange(editor.document);
               }
             } catch (e) {
               console.log("Cursor positioning adjustment:", e);
@@ -938,13 +957,16 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
     return orderedItems;
   }, [editor, getCustomAISlashMenuItems]);
 
-  // Handle content changes
+  // Handle content changes - ENHANCED
   React.useEffect(() => {
     if (typeof window === 'undefined' || !isMounted) return;
     
     const handleChange = () => {
       if (onContentChange) {
-        onContentChange(editor.document);
+        // Small delay to ensure content is fully updated
+        setTimeout(() => {
+          onContentChange(editor.document);
+        }, 10);
       }
     };
 
@@ -1184,7 +1206,7 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
                     💡 Topik atau Kata Kunci
                   </Text>
                   <Textarea
-                    placeholder="Untuk mode 'Struktur' - jelaskan topik secara umum. Untuk mode 'Konten' - masukkan bab/sub bab spesifik yang ingin diisi."
+                    placeholder="Masukkan topik yang ingin Anda buat - contoh: 'Artificial Intelligence dalam Pendidikan'"
                     value={prompt}
                     onChange={(event) => setPrompt(event.currentTarget.value)}
                     minRows={3}
@@ -1199,9 +1221,6 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
                       }
                     }}
                   />
-                  <Text size="sm" c="dimmed">
-                    Untuk mode "Struktur" - jelaskan topik secara umum. Untuk mode "Konten" - masukkan bab/sub bab spesifik yang ingin diisi.
-                  </Text>
                 </Stack>
               </Paper>
 
@@ -1288,6 +1307,26 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
                         Mohon tunggu sebentar
                       </Text>
                     </Stack>
+                  </Group>
+                </Paper>
+              )}
+
+              {/* Tips Section */}
+              {!isAILoading && (
+                <Paper p="lg" radius="md" bg="blue.0" style={{ border: '1px solid #e3f2fd' }}>
+                  <Group gap="sm" align="flex-start">
+                    <IconBulb size={20} style={{ color: '#1976d2', marginTop: 2 }} />
+                    <div>
+                      <Text fw={600} size="sm" c="blue.8" mb="xs">
+                        💡 Perbedaan Mode Generate:
+                      </Text>
+                      <Text size="xs" c="blue.7" style={{ lineHeight: 1.5 }}>
+                        • <strong>Buat Struktur:</strong> Menghasilkan outline heading/sub-heading saja (ideal untuk planning)<br/>
+                        • <strong>Isi Konten:</strong> Menghasilkan artikel lengkap dalam paragraf text (tanpa heading)<br/>
+                        • Gunakan kata kunci yang spesifik untuk hasil yang lebih relevan<br/>
+                        • Anda bisa mengedit hasil generate sebelum memasukkan ke editor
+                      </Text>
+                    </div>
                   </Group>
                 </Paper>
               )}
