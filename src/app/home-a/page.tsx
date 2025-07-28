@@ -1,8 +1,13 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { ActionIcon, AppShell, Avatar, Box, Burger, Button, Container, Flex, Group, Image, ScrollArea, Stack, Text, TextInput, ThemeIcon, Title, useComputedColorScheme, useMantineColorScheme } from '@mantine/core';
-
-import BlockNoteEditorComponent from '@/components/BlockNoteEditor'; // Fixed: menggunakan alias @/ yang lebih standar
+// import BlockNoteEditorComponent from '@/components/BlockNoteEditor';
+//  // Fixed: menggunakan alias @/ yang lebih standar
+const BlockNoteEditorComponent = dynamic(
+  () => import('@/components/BlockNoteEditor'),
+  { ssr: false }
+);
 import { useDisclosure, useMediaQuery } from '@mantine/hooks';
 import { IconBrain, IconFilePlus, IconGraph, IconMessageCircle2, IconMoon, IconSend, IconSettings, IconSun, IconUpload } from '@tabler/icons-react';
 import NextImage from 'next/image';

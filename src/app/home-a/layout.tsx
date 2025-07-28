@@ -28,15 +28,8 @@ export default function HomePage({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <head>
-        <ColorSchemeScript />
-      </head>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <MantineProvider>
           {children}
         </MantineProvider>
-      </body>
-    </html>
   );
 }

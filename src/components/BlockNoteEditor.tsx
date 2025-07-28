@@ -44,6 +44,7 @@ import {
 } from "@tabler/icons-react";
 import { generateText } from "ai";
 import React from "react";
+import dynamic from "next/dynamic";
 
 // Interfaces
 interface BlockNoteEditorProps {
@@ -65,12 +66,37 @@ interface InlineAIState {
   query: string;
 }
 
+// Loading component
+const EditorLoading = () => (
+  <div style={{ 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    height: '400px',
+    border: '1px solid #e9ecef',
+    borderRadius: '8px',
+    backgroundColor: '#f8f9fa'
+  }}>
+    <Stack align="center" gap="md">
+      <Loader size="lg" color="blue" />
+      <Text size="sm" c="dimmed">Loading Editor...</Text>
+    </Stack>
+  </div>
+);
+
 // Main component
-export default function BlockNoteEditorComponent({
+function BlockNoteEditorComponent({
   onContentChange,
   style,
 }: BlockNoteEditorProps) {
   const computedColorScheme = useComputedColorScheme("light");
+  
+  // Hydration check
+  const [isMounted, setIsMounted] = React.useState(false);
+  
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   // Core states
   const [isAILoading, setIsAILoading] = React.useState(false);
@@ -79,6 +105,10 @@ export default function BlockNoteEditorComponent({
   const [generatedContent, setGeneratedContent] = React.useState("");
   const [aiMode, setAIMode] = React.useState<"new" | "continue">("new");
   const [isAutoContinuing, setIsAutoContinuing] = React.useState(false);
+
+  // Simple typing animation state
+  const [isTyping, setIsTyping] = React.useState(false);
+  const typingTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Continue writing state
   const [continueState, setContinueState] = React.useState<ContinueWritingState>({
@@ -100,6 +130,8 @@ export default function BlockNoteEditorComponent({
 
   // AI Model setup
   const aiModel = React.useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    
     try {
       const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
       
@@ -187,12 +219,87 @@ export default function BlockNoteEditorComponent({
     }
   ];
 
-  // Utility function to extract text from any block - FIXED
+  // Simple typing function
+  const typeText = async (text: string, targetBlock: any): Promise<void> => {
+    return new Promise((resolve) => {
+      setIsTyping(true);
+      let index = 0;
+      
+      const typeNextChar = () => {
+        if (index <= text.length) {
+          const currentText = text.substring(0, index);
+          
+          try {
+            editor.updateBlock(targetBlock, {
+              type: targetBlock.type,
+              content: currentText,
+              ...(targetBlock.props && { props: targetBlock.props })
+            });
+          } catch (error) {
+            console.warn("Error updating block:", error);
+          }
+
+          index++;
+          
+          if (index <= text.length) {
+            typingTimeoutRef.current = setTimeout(typeNextChar, 5);
+          } else {
+            setIsTyping(false);
+            resolve();
+          }
+        }
+      };
+
+      typeNextChar();
+    });
+  };
+
+  // Simple batch typing
+  const typeBlocks = async (blocks: { text: string; type: string; props?: any }[], insertAfterBlock: any): Promise<void> => {
+    setIsAutoContinuing(true);
+    
+    try {
+      let currentBlock = insertAfterBlock;
+      
+      for (const blockData of blocks) {
+        const newBlock = {
+          type: blockData.type as any,
+          content: "",
+          ...(blockData.props && { props: blockData.props })
+        };
+
+        await editor.insertBlocks([newBlock], currentBlock, "after");
+        
+        const allBlocks = editor.document;
+        const currentIndex = allBlocks.findIndex(block => block.id === currentBlock.id);
+        const insertedBlock = allBlocks[currentIndex + 1];
+
+        if (insertedBlock && blockData.text) {
+          await typeText(blockData.text, insertedBlock);
+          currentBlock = insertedBlock;
+        }
+      }
+    } catch (error) {
+      console.error("Typing error:", error);
+    } finally {
+      setIsAutoContinuing(false);
+    }
+  };
+
+  // Stop typing
+  const stopTyping = () => {
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    setIsTyping(false);
+    setIsAutoContinuing(false);
+  };
+
+  // Utility function to extract text from any block
   const extractTextFromBlock = (block: any): string => {
     try {
       if (!block) return "";
       
-      // Handle different content structures
       if (typeof block.content === 'string') {
         return block.content;
       }
@@ -202,7 +309,6 @@ export default function BlockNoteEditorComponent({
           .map((item: any) => {
             if (typeof item === 'string') return item;
             if (item && typeof item === 'object') {
-              // Handle different text content structures
               if ('text' in item) return item.text;
               if ('content' in item && typeof item.content === 'string') return item.content;
             }
@@ -249,27 +355,22 @@ export default function BlockNoteEditorComponent({
     }
   };
 
-  // Check if should show continue button - Enhanced version
+  // Check if should show continue button
   const shouldShowContinueButton = (block: any): boolean => {
     try {
       if (!block) return false;
       
-      // Allow continue button for headings (untuk generate content)
       if (block.type === "heading") {
         return true;
       }
       
-      // Enhanced logic for paragraphs - more permissive
       if (block.type === "paragraph") {
         const text = extractTextFromBlock(block);
-        
-        // Show continue button for any paragraph with content (even short ones)
         if (text.length >= 5) {
           return true;
         }
       }
       
-      // Also allow for list items
       if (block.type === "bulletListItem" || block.type === "numberedListItem") {
         const text = extractTextFromBlock(block);
         if (text.length >= 3) {
@@ -283,73 +384,58 @@ export default function BlockNoteEditorComponent({
     }
   };
 
-  // Parse inline formatting - FIXED
-  const parseInlineFormatting = (text: string): any[] => {
-    if (!text || typeof text !== 'string') {
-      return [{ type: "text", text: text || "" }];
-    }
-    
-    // Simple but robust implementation
-    return [{ type: "text", text: text.trim() }];
-  };
-
-  // Find matching heading
-  const findMatchingHeading = (blocks: any[], headingText: string, level: number, startIndex: number): number => {
-    for (let i = startIndex; i < blocks.length; i++) {
-      const block = blocks[i];
-      if (block.type === "heading" && block.props?.level === level) {
-        const blockText = extractTextFromBlock(block);
-        if (blockText === headingText) {
-          return i;
-        }
-      }
-    }
-    return -1;
-  };
-
-  // Close modal and reset
-  const closeModalAndReset = () => {
-    closeAIModal();
-    setPrompt("");
-    setGeneratedContent("");
-    setAIMode("new");
-  };
-
-  // Handle AI generation
-  const handleAIGeneration = async (inputPrompt: string, type: string = "structure", shouldClearEditor: boolean = true) => {
-    if (!inputPrompt.trim()) {
-      alert("⚠️ Silakan masukkan topik atau kata kunci sebelum generate konten!");
-      return;
-    }
-    
-    if (shouldClearEditor) {
-      try {
-        const currentBlocks = editor.document;
+  // Insert AI content with typing animation
+  const insertAIContentAtCursor = async (text: string, currentBlock: any) => {
+    try {
+      if (!text || !text.trim()) return;
+      
+      const lines = text.split('\n').filter((line: string) => line.trim());
+      if (lines.length === 0) return;
+      
+      const blocksToType = lines.map((line: string) => {
+        const trimmedLine = line.trim();
         
-        if (currentBlocks.length > 0) {
-          if (currentBlocks.length > 1) {
-            const blocksToRemove = currentBlocks.slice(1);
-            editor.removeBlocks(blocksToRemove);
-          }
-          
-          const firstBlock = editor.document[0];
-          if (firstBlock) {
-            editor.updateBlock(firstBlock, {
-              type: "paragraph",
-              content: "",
-            });
-          }
+        const headingMatch = trimmedLine.match(/^(#{1,6})\s+(.+)$/);
+        if (headingMatch) {
+          const level = Math.min(headingMatch[1].length, 3) as 1 | 2 | 3;
+          return {
+            text: headingMatch[2],
+            type: "heading",
+            props: { level },
+          };
         }
-      } catch (error) {
-        console.log("Editor clearing adjustment:", error);
-      }
+        
+        if (trimmedLine.match(/^[\*\-]\s+/)) {
+          return {
+            text: trimmedLine.replace(/^[\*\-]\s+/, ''),
+            type: "bulletListItem",
+          };
+        }
+        
+        if (trimmedLine.match(/^\d+\.\s+/)) {
+          return {
+            text: trimmedLine.replace(/^\d+\.\s+/, ''),
+            type: "numberedListItem",
+          };
+        }
+        
+        return {
+          text: trimmedLine,
+          type: "paragraph",
+        };
+      });
+
+      await typeBlocks(blocksToType, currentBlock);
+
+    } catch (error) {
+      console.error("Error inserting content:", error);
     }
-    
-    await generateAIContent(inputPrompt, type);
   };
 
   // Handle inline AI trigger
   const handleInlineAITrigger = React.useCallback(() => {
+    if (typeof window === 'undefined') return;
+    
     try {
       setInlineAIState(prev => ({ ...prev, isVisible: false }));
       
@@ -372,7 +458,6 @@ export default function BlockNoteEditorComponent({
         let finalX = rect.left;
         let finalY = rect.bottom + 8;
         
-        // Simple positioning - avoid complex calculations
         const popupWidth = 320;
         const popupHeight = 280;
         const margin = 20;
@@ -405,241 +490,6 @@ export default function BlockNoteEditorComponent({
     }
   }, [editor]);
 
-  // Analyze cursor context - Enhanced version
-  const analyzeCurrentCursorContext = (): {
-    targetHeading: { text: string; level: number; position: number; block: any } | null;
-    headingContent: string;
-    insertPosition: number;
-    isAtHeading: boolean;
-    contextType: 'heading' | 'under_heading' | 'paragraph' | 'list' | 'general';
-    currentText: string;
-    precedingContext: string;
-  } | null => {
-    try {
-      const cursorPosition = editor.getTextCursorPosition();
-      if (!cursorPosition) return null;
-      
-      const currentBlock = cursorPosition.block;
-      const allBlocks = editor.document;
-      const currentIndex = allBlocks.findIndex(block => block.id === currentBlock.id);
-      
-      const currentText = extractTextFromBlock(currentBlock);
-      
-      // Get preceding context (previous 2-3 blocks for better context)
-      const precedingBlocks = allBlocks.slice(Math.max(0, currentIndex - 3), currentIndex);
-      let precedingContext = "";
-      
-      precedingBlocks.forEach(block => {
-        const text = extractTextFromBlock(block);
-        if (text) {
-          if (block.type === "heading") {
-            const level = block.props?.level || 1;
-            const headingPrefix = '#'.repeat(level);
-            precedingContext += `${headingPrefix} ${text}\n`;
-          } else {
-            precedingContext += `${text} `;
-          }
-        }
-      });
-      
-      // Check if cursor is on a heading
-      if (currentBlock.type === "heading") {
-        const headingText = extractTextFromBlock(currentBlock);
-        
-        if (headingText) {
-          const level = currentBlock.props?.level || 1;
-          return {
-            targetHeading: {
-              text: headingText,
-              level: level,
-              position: currentIndex,
-              block: currentBlock
-            },
-            headingContent: "",
-            insertPosition: currentIndex,
-            isAtHeading: true,
-            contextType: 'heading',
-            currentText,
-            precedingContext: precedingContext.trim()
-          };
-        }
-      }
-      
-      // Check if cursor is in a list item
-      if (currentBlock.type === "bulletListItem" || currentBlock.type === "numberedListItem") {
-        // Find governing heading
-        let governingHeading: { text: string; level: number; position: number; block: any } | null = null;
-        
-        for (let i = currentIndex - 1; i >= 0; i--) {
-          const block = allBlocks[i];
-          if (block.type === "heading") {
-            const headingText = extractTextFromBlock(block);
-            if (headingText) {
-              const level = block.props?.level || 1;
-              governingHeading = {
-                text: headingText,
-                level: level,
-                position: i,
-                block: block
-              };
-              break;
-            }
-          }
-        }
-        
-        return {
-          targetHeading: governingHeading,
-          headingContent: "",
-          insertPosition: currentIndex,
-          isAtHeading: false,
-          contextType: 'list',
-          currentText,
-          precedingContext: precedingContext.trim()
-        };
-      }
-      
-      // Check if cursor is in a regular paragraph
-      if (currentBlock.type === "paragraph") {
-        // Find governing heading
-        let governingHeading: { text: string; level: number; position: number; block: any } | null = null;
-        let headingContent = "";
-        
-        for (let i = currentIndex - 1; i >= 0; i--) {
-          const block = allBlocks[i];
-          if (block.type === "heading") {
-            const headingText = extractTextFromBlock(block);
-            if (headingText) {
-              const level = block.props?.level || 1;
-              governingHeading = {
-                text: headingText,
-                level: level,
-                position: i,
-                block: block
-              };
-              
-              // Collect content under this heading
-              for (let j = i + 1; j < currentIndex; j++) {
-                const contentBlock = allBlocks[j];
-                const contentText = extractTextFromBlock(contentBlock);
-                if (contentText) {
-                  headingContent += `${contentText} `;
-                }
-              }
-              break;
-            }
-          }
-        }
-        
-        return {
-          targetHeading: governingHeading,
-          headingContent: headingContent.trim(),
-          insertPosition: currentIndex,
-          isAtHeading: false,
-          contextType: governingHeading ? 'under_heading' : 'paragraph',
-          currentText,
-          precedingContext: precedingContext.trim()
-        };
-      }
-      
-      // General case
-      return {
-        targetHeading: null,
-        headingContent: "",
-        insertPosition: currentIndex,
-        isAtHeading: false,
-        contextType: 'general',
-        currentText,
-        precedingContext: precedingContext.trim()
-      };
-    } catch (error) {
-      console.error("Error analyzing cursor context:", error);
-      return null;
-    }
-  };
-
-  // Insert AI content at cursor - FIXED
-  const insertAIContentAtCursor = async (text: string, currentBlock: any) => {
-    try {
-      if (!text || !text.trim()) {
-        console.warn("No text to insert");
-        return;
-      }
-      
-      const lines = text.split('\n').filter((line: string) => line.trim());
-      
-      if (lines.length === 0) {
-        console.warn("No valid lines to insert");
-        return;
-      }
-      
-      const blocksToInsert: any[] = lines.map((line: string) => {
-        const trimmedLine = line.trim();
-        
-        // Parse markdown-style headings
-        const headingMatch = trimmedLine.match(/^(#{1,6})\s+(.+)$/);
-        if (headingMatch) {
-          const level = Math.min(headingMatch[1].length, 3) as 1 | 2 | 3;
-          const headingText = headingMatch[2];
-          return {
-            type: "heading" as const,
-            content: headingText,
-            props: { level },
-          };
-        }
-        
-        // Parse bullet list items
-        if (trimmedLine.match(/^[\*\-]\s+/)) {
-          const listText = trimmedLine.replace(/^[\*\-]\s+/, '');
-          return {
-            type: "bulletListItem" as const,
-            content: listText,
-          };
-        }
-        
-        // Parse numbered list items
-        if (trimmedLine.match(/^\d+\.\s+/)) {
-          const listText = trimmedLine.replace(/^\d+\.\s+/, '');
-          return {
-            type: "numberedListItem" as const,
-            content: listText,
-          };
-        }
-        
-        // Default to paragraph
-        return {
-          type: "paragraph" as const,
-          content: trimmedLine,
-        };
-      });
-
-      if (blocksToInsert.length > 0) {
-        // Use insertBlocks method properly
-        await editor.insertBlocks(blocksToInsert, currentBlock, "after");
-        
-        // Set cursor position to the last inserted block
-        setTimeout(() => {
-          try {
-            const allBlocks = editor.document;
-            const currentIndex = allBlocks.findIndex(block => block.id === currentBlock.id);
-            const lastInsertedIndex = currentIndex + blocksToInsert.length;
-            
-            if (lastInsertedIndex < allBlocks.length) {
-              const lastInsertedBlock = allBlocks[lastInsertedIndex];
-              if (lastInsertedBlock) {
-                editor.setTextCursorPosition(lastInsertedBlock, "end");
-              }
-            }
-          } catch (e) {
-            console.log("Cursor positioning adjustment:", e);
-          }
-        }, 100);
-      }
-    } catch (error) {
-      console.error("Error inserting AI content:", error);
-      throw error;
-    }
-  };
-
   // Handle inline AI actions
   const handleInlineAIAction = async (action: string) => {
     const cursorPosition = editor.getTextCursorPosition();
@@ -657,117 +507,18 @@ export default function BlockNoteEditorComponent({
 
     try {
       let systemPrompt = "";
-      let maxTokens = 500;
 
       switch (action) {
         case "continue":
-          const cursorContext = analyzeCurrentCursorContext();
-          
-          if (!cursorContext) {
-            systemPrompt = `Lanjutkan penulisan dengan konten yang natural dan relevan.
+          const contextText = extractContextFromCursor();
+          systemPrompt = `Lanjutkan penulisan dari konteks berikut:
+
+KONTEKS: ${contextText}
 
 INSTRUKSI:
-- Tulis 1-2 paragraf yang mengalir dengan baik
+- Tulis 1-2 paragraf yang mengalir natural
 - Gunakan bahasa Indonesia yang natural
 - Berikan informasi yang valuable`;
-            break;
-          }
-
-          const { contextType, currentText, precedingContext, targetHeading, headingContent } = cursorContext;
-          
-          // Generate different prompts based on context type
-          switch (contextType) {
-            case 'heading':
-              if (targetHeading) {
-                systemPrompt = `Tulis konten untuk heading berikut. HANYA tulis isi konten paragraf, JANGAN tulis ulang headingnya.
-
-HEADING TARGET: ${targetHeading.text} (Level ${targetHeading.level})
-
-INSTRUKSI:
-- Tulis 2-3 paragraf konten yang relevan untuk heading tersebut
-- Jangan tulis ulang judul/heading
-- Mulai langsung dengan konten paragraf
-- Gunakan bahasa Indonesia yang natural dan informatif
-- Sesuaikan kedalaman konten dengan level heading
-
-TUGAS: Tulis konten detail untuk heading "${targetHeading.text}"`;
-              }
-              break;
-              
-            case 'under_heading':
-              if (targetHeading) {
-                systemPrompt = `Lanjutkan penulisan konten untuk bagian heading berikut:
-
-HEADING: ${targetHeading.text} (Level ${targetHeading.level})
-
-KONTEN YANG SUDAH ADA:
-${headingContent || "(Belum ada konten)"}
-
-KALIMAT SAAT INI: ${currentText}
-
-INSTRUKSI:
-- Lanjutkan dengan konten yang natural dan relevan dengan heading "${targetHeading.text}"
-- Jangan tulis ulang heading atau konten yang sudah ada
-- Tulis 1-2 paragraf tambahan yang melengkapi konten existing
-- Pertahankan konsistensi tone dan style
-- Fokus pada value yang belum dibahas terkait topik "${targetHeading.text}"
-
-TUGAS: Lanjutkan konten untuk "${targetHeading.text}"`;
-              }
-              break;
-              
-            case 'paragraph':
-              systemPrompt = `Lanjutkan penulisan dari konteks paragraf berikut:
-
-KONTEKS SEBELUMNYA:
-${precedingContext}
-
-KALIMAT SAAT INI: ${currentText}
-
-INSTRUKSI:
-- Lanjutkan alur pemikiran dari kalimat yang sedang ditulis
-- Pertahankan kohesi dan koherensi dengan konteks sebelumnya
-- Tulis 1-2 paragraf yang mengalir natural
-- Jaga konsistensi tone dan style penulisan
-- Berikan informasi atau penjelasan yang melengkapi
-
-TUGAS: Lanjutkan penulisan dengan mengikuti alur dan konteks yang sudah ada`;
-              break;
-              
-            case 'list':
-              systemPrompt = `Lanjutkan penulisan untuk item list berikut:
-
-KONTEKS SEBELUMNYA:
-${precedingContext}
-
-ITEM SAAT INI: ${currentText}
-
-INSTRUKSI:
-- Lanjutkan dengan item-item list yang relevan dan logis
-- Pertahankan format dan style yang konsisten
-- Tulis 2-3 item tambahan yang melengkapi
-- Pastikan ada progression yang masuk akal
-- ${targetHeading ? `Sesuaikan dengan topik "${targetHeading.text}"` : 'Ikuti alur yang sudah ada'}
-
-TUGAS: Lanjutkan dengan item list yang relevan`;
-              break;
-              
-            default:
-              systemPrompt = `Lanjutkan penulisan dari konteks berikut:
-
-KONTEKS SEBELUMNYA:
-${precedingContext}
-
-TEKS SAAT INI: ${currentText}
-
-INSTRUKSI:
-- Lanjutkan dengan natural dan relevan mengikuti alur yang ada
-- Tulis 1-2 paragraf yang melengkapi konteks
-- Jaga konsistensi tone dan alur penulisan
-- Berikan informasi yang valuable dan logis
-
-TUGAS: Lanjutkan penulisan mengikuti konteks dan alur yang sudah ada`;
-          }
           break;
 
         case "summarize":
@@ -811,7 +562,7 @@ INSTRUKSI:
       const { text } = await generateText({
         model: aiModel,
         prompt: systemPrompt,
-        maxTokens,
+        maxTokens: 500,
         temperature: 0.7,
         presencePenalty: 0.2,
         frequencyPenalty: 0.1,
@@ -819,9 +570,6 @@ INSTRUKSI:
 
       if (text && text.trim()) {
         await insertAIContentAtCursor(text, currentBlock);
-      } else {
-        console.warn("No text generated from AI");
-        alert("⚠️ AI tidak menghasilkan konten. Silakan coba lagi.");
       }
 
     } catch (error) {
@@ -834,6 +582,8 @@ INSTRUKSI:
 
   // Handle selection change
   const handleSelectionChange = React.useCallback(() => {
+    if (typeof window === 'undefined') return;
+    
     try {
       const cursorPosition = editor.getTextCursorPosition();
       if (!cursorPosition) {
@@ -877,6 +627,8 @@ INSTRUKSI:
 
   // Setup selection change listener
   React.useEffect(() => {
+    if (typeof window === 'undefined' || !isMounted) return;
+    
     let unsubscribe: (() => void) | undefined;
     
     try {
@@ -893,7 +645,7 @@ INSTRUKSI:
       }
       document.removeEventListener('selectionchange', handleSelectionChange);
     };
-  }, [editor, handleSelectionChange]);
+  }, [editor, handleSelectionChange, isMounted]);
 
   // AI Generation function
   const generateAIContent = async (prompt: string, type: string = "structure") => {
@@ -1001,87 +753,48 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
     }
   };
 
-  // Smart content merging - FIXED
-  const insertContentWithSmartMerging = async () => {
-    try {
-      if (!generatedContent || !generatedContent.trim()) {
-        console.warn("No content to merge");
-        return;
-      }
-
-      const currentBlocks = editor.document;
-      const generatedLines = generatedContent.split('\n').filter((line: string) => line.trim());
-      
-      let currentBlockIndex = 0;
-      let i = 0;
-      
-      while (i < generatedLines.length && currentBlockIndex < currentBlocks.length) {
-        const line = generatedLines[i].trim();
-        if (!line) {
-          i++;
-          continue;
-        }
-        
-        const headingMatch = line.match(/^(#+)\s+(.+)$/);
-        
-        if (headingMatch) {
-          const level = headingMatch[1].length;
-          const headingText = headingMatch[2];
-          
-          const matchingBlockIndex = findMatchingHeading(currentBlocks, headingText, level, currentBlockIndex);
-          
-          if (matchingBlockIndex !== -1) {
-            currentBlockIndex = matchingBlockIndex;
-            i++;
-            
-            const contentToInsert: any[] = [];
-            while (i < generatedLines.length) {
-              const contentLine = generatedLines[i].trim();
-              if (!contentLine) {
-                i++;
-                continue;
-              }
-              
-              if (contentLine.match(/^#+\s+/)) {
-                break;
-              }
-              
-              contentToInsert.push({
-                type: "paragraph" as const,
-                content: contentLine,
-              });
-              i++;
-            }
-            
-            if (contentToInsert.length > 0) {
-              const targetBlock = currentBlocks[currentBlockIndex];
-              await editor.insertBlocks(contentToInsert, targetBlock, "after");
-              currentBlockIndex += contentToInsert.length + 1;
-            }
-          } else {
-            i++;
-          }
-        } else {
-          i++;
-        }
-      }
-    } catch (error) {
-      console.error("Error in smart merging:", error);
-      // Fallback to simple insertion
-      const lines = generatedContent.split('\n').filter((line: string) => line.trim());
-      const blocksToInsert: any[] = lines.map((line: string) => ({
-        type: "paragraph" as const,
-        content: line.trim(),
-      }));
-      
-      if (blocksToInsert.length > 0) {
-        const lastBlock = editor.document[editor.document.length - 1];
-        await editor.insertBlocks(blocksToInsert, lastBlock, "after");
-      }
-    }
+  // Close modal and reset
+  const closeModalAndReset = () => {
+    closeAIModal();
+    setPrompt("");
+    setGeneratedContent("");
+    setAIMode("new");
   };
 
-  // Insert content to editor - COMPLETELY FIXED
+  // Handle AI generation
+  const handleAIGeneration = async (inputPrompt: string, type: string = "structure", shouldClearEditor: boolean = true) => {
+    if (!inputPrompt.trim()) {
+      alert("⚠️ Silakan masukkan topik atau kata kunci sebelum generate konten!");
+      return;
+    }
+    
+    if (shouldClearEditor) {
+      try {
+        const currentBlocks = editor.document;
+        
+        if (currentBlocks.length > 0) {
+          if (currentBlocks.length > 1) {
+            const blocksToRemove = currentBlocks.slice(1);
+            editor.removeBlocks(blocksToRemove);
+          }
+          
+          const firstBlock = editor.document[0];
+          if (firstBlock) {
+            editor.updateBlock(firstBlock, {
+              type: "paragraph",
+              content: "",
+            });
+          }
+        }
+      } catch (error) {
+        console.log("Editor clearing adjustment:", error);
+      }
+    }
+    
+    await generateAIContent(inputPrompt, type);
+  };
+
+  // Insert content to editor
   const insertContentToEditor = async (shouldAppend: boolean = false) => {
     if (!generatedContent || !generatedContent.trim()) {
       console.warn("No generated content to insert");
@@ -1089,12 +802,6 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
     }
 
     try {
-      if (aiMode === "continue") {
-        await insertContentWithSmartMerging();
-        closeModalAndReset();
-        return;
-      }
-      
       const lines = generatedContent.split('\n').filter((line: string) => line.trim());
       
       if (lines.length === 0) {
@@ -1108,7 +815,6 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
         const line = lines[i].trim();
         if (!line) continue;
         
-        // Parse headings
         const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
         if (headingMatch) {
           const level = Math.min(headingMatch[1].length, 3) as 1 | 2 | 3;
@@ -1120,7 +826,6 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
             props: { level },
           });
         }
-        // Parse bullet lists
         else if (line.match(/^[\*\-]\s+/)) {
           const listText = line.replace(/^[\*\-]\s+/, '').trim();
           blocksToInsert.push({
@@ -1128,7 +833,6 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
             content: listText,
           });
         }
-        // Parse numbered lists
         else if (line.match(/^\d+\.\s+/)) {
           const listText = line.replace(/^\d+\.\s+/, '').trim();
           blocksToInsert.push({
@@ -1136,7 +840,6 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
             content: listText,
           });
         }
-        // Default paragraph
         else {
           blocksToInsert.push({
             type: "paragraph" as const,
@@ -1147,10 +850,8 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
       
       if (blocksToInsert.length > 0) {
         if (!shouldAppend) {
-          // Replace all content
           await editor.replaceBlocks(editor.document, blocksToInsert);
           
-          // Set cursor to the first block
           setTimeout(() => {
             try {
               const firstBlock = editor.document[0];
@@ -1162,11 +863,9 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
             }
           }, 100);
         } else {
-          // Append to existing content
           const lastBlock = editor.document[editor.document.length - 1];
           await editor.insertBlocks(blocksToInsert, lastBlock, "after");
           
-          // Set cursor to the last inserted block
           setTimeout(() => {
             try {
               const allBlocks = editor.document;
@@ -1241,6 +940,8 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
 
   // Handle content changes
   React.useEffect(() => {
+    if (typeof window === 'undefined' || !isMounted) return;
+    
     const handleChange = () => {
       if (onContentChange) {
         onContentChange(editor.document);
@@ -1260,7 +961,19 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
         unsubscribe();
       }
     };
-  }, [editor, onContentChange]);
+  }, [editor, onContentChange, isMounted]);
+
+  // Cleanup on unmount
+  React.useEffect(() => {
+    return () => {
+      stopTyping();
+    };
+  }, []);
+
+  // Show loading until component is mounted (hydrated)
+  if (!isMounted) {
+    return <EditorLoading />;
+  }
 
   return (
     <>
@@ -1414,7 +1127,7 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
           </div>
         )}
 
-        {/* Auto Continue Loading Overlay */}
+        {/* Simple loading overlay */}
         {isAutoContinuing && (
           <Overlay opacity={0.3}>
             <div style={{ 
@@ -1429,7 +1142,9 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
             }}>
               <Group gap="md">
                 <Loader size="md" color="blue" />
-                <Text fw={500} c="blue">AI sedang melanjutkan tulisan...</Text>
+                <Text fw={500} c="blue">
+                  {isTyping ? 'AI sedang mengetik...' : ' AI sedang berpikir...'}
+                </Text>
               </Group>
             </div>
           </Overlay>
@@ -1667,3 +1382,14 @@ Buat HANYA outline heading untuk "${prompt}" tanpa konten paragraf.`;
     </>
   );
 }
+
+// Export with dynamic import to avoid SSR issues
+const BlockNoteEditorWithNoSSR = dynamic(
+  () => Promise.resolve(BlockNoteEditorComponent),
+  {
+    ssr: false,
+    loading: () => <EditorLoading />
+  }
+);
+
+export default BlockNoteEditorWithNoSSR;
