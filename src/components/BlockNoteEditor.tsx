@@ -79,7 +79,7 @@ const EditorLoading = () => (
   }}>
     <Stack align="center" gap="md">
       <Loader size="lg" color="blue" />
-      <Text size="sm" c="dimmed">Loading Editor...</Text>
+      <Text size="sm" c="dimmed">Memuat Editor...</Text>
     </Stack>
   </div>
 );
@@ -136,7 +136,7 @@ function BlockNoteEditorComponent({
       const apiKey = process.env.NEXT_PUBLIC_GROQ_API_KEY;
       
       if (!apiKey) {
-        console.warn("NEXT_PUBLIC_GROQ_API_KEY not found. AI features will be disabled.");
+        console.warn("NEXT_PUBLIC_GROQ_API_KEY tidak ditemukan. Fitur AI akan dinonaktifkan.");
         return null;
       }
       
@@ -171,7 +171,7 @@ function BlockNoteEditorComponent({
         const json = await response.json();
         return json.url;
       } catch (error) {
-        console.error("Upload failed:", error);
+        console.error("Upload gagal:", error);
         return "";
       }
     },
@@ -181,15 +181,15 @@ function BlockNoteEditorComponent({
   const aiTemplates = [
     {
       title: "Buat Struktur", 
-      description: "Outline lengkap dengan heading dan sub-heading",
+      description: "Kerangka lengkap dengan judul dan sub-judul",
       type: "structure",
       color: "blue", 
       icon: IconList,
-      defaultPrompt: "Buat outline untuk artikel"
+      defaultPrompt: "Buat kerangka untuk artikel"
     },
     {
       title: "Isi Konten",
-      description: "Konten paragraf lengkap tanpa heading/struktur",
+      description: "Konten paragraf lengkap tanpa judul/struktur",
       type: "content", 
       color: "green",
       icon: IconEdit,
@@ -201,20 +201,20 @@ function BlockNoteEditorComponent({
   const inlineAISuggestions = [
     {
       icon: <IconPencilPlus size={16} />,
-      title: "Continue Writing",
-      description: "AI will continue from where you left off",
+      title: "Lanjutkan Menulis",
+      description: "AI akan melanjutkan dari tempat Anda berhenti",
       action: "continue"
     },
     {
       icon: <IconFileText size={16} />,
-      title: "Summarize",
-      description: "Create a summary of the content",
+      title: "Buat Ringkasan",
+      description: "Buat ringkasan dari konten yang ada",
       action: "summarize"
     },
     {
       icon: <IconBulb size={16} />,
-      title: "Write Anything...",
-      description: "Ask AI to write custom content",
+      title: "Tulis Sesuatu...",
+      description: "Minta AI menulis konten khusus",
       action: "write_anything"
     }
   ];
@@ -236,7 +236,7 @@ function BlockNoteEditorComponent({
               ...(targetBlock.props && { props: targetBlock.props })
             });
           } catch (error) {
-            console.warn("Error updating block:", error);
+            console.warn("Error memperbarui blok:", error);
           }
 
           index++;
@@ -280,7 +280,7 @@ function BlockNoteEditorComponent({
         }
       }
     } catch (error) {
-      console.error("Typing error:", error);
+      console.error("Error mengetik:", error);
     } finally {
       setIsAutoContinuing(false);
     }
@@ -319,7 +319,7 @@ function BlockNoteEditorComponent({
       
       return "";
     } catch (error) {
-      console.error("Error extracting text from block:", error);
+      console.error("Error mengekstrak teks dari blok:", error);
       return "";
     }
   };
@@ -350,7 +350,7 @@ function BlockNoteEditorComponent({
       
       return context.trim();
     } catch (error) {
-      console.error("Error extracting context:", error);
+      console.error("Error mengekstrak konteks:", error);
       return "";
     }
   };
@@ -435,7 +435,7 @@ function BlockNoteEditorComponent({
       }, 100);
 
     } catch (error) {
-      console.error("Error inserting content:", error);
+      console.error("Error memasukkan konten:", error);
     }
   };
 
@@ -450,7 +450,7 @@ function BlockNoteEditorComponent({
         const cursorPosition = editor.getTextCursorPosition();
         
         if (!cursorPosition) {
-          console.warn("No cursor position found");
+          console.warn("Posisi kursor tidak ditemukan");
           return;
         }
 
@@ -487,7 +487,7 @@ function BlockNoteEditorComponent({
       }, 50);
       
     } catch (error) {
-      console.error("Error triggering inline AI:", error);
+      console.error("Error memicu inline AI:", error);
       setInlineAIState({
         isVisible: true,
         position: { x: 100, y: 100 },
@@ -503,8 +503,8 @@ function BlockNoteEditorComponent({
     const currentBlock = cursorPosition?.block;
     
     if (!aiModel || !currentBlock) {
-      console.error("AI model or current block not available");
-      alert("❌ AI model tidak tersedia. Silakan periksa konfigurasi API key.");
+      console.error("Model AI atau blok saat ini tidak tersedia");
+      alert("❌ Model AI tidak tersedia. Silakan periksa konfigurasi API key.");
       return;
     }
 
@@ -582,7 +582,7 @@ INSTRUKSI:
       }
 
     } catch (error) {
-      console.error("Inline AI action failed:", error);
+      console.error("Aksi inline AI gagal:", error);
       alert("❌ Gagal menggunakan AI. Silakan coba lagi.");
     } finally {
       setIsAutoContinuing(false);
@@ -628,7 +628,7 @@ INSTRUKSI:
         setInlineAIState(prev => ({ ...prev, isVisible: false }));
       }
     } catch (error) {
-      console.error("Error handling selection change:", error);
+      console.error("Error menangani perubahan seleksi:", error);
       setContinueState(prev => ({ ...prev, isVisible: false }));
       setInlineAIState(prev => ({ ...prev, isVisible: false }));
     }
@@ -643,7 +643,7 @@ INSTRUKSI:
     try {
       unsubscribe = editor.onChange?.(handleSelectionChange);
     } catch (error) {
-      console.error("Error setting up editor change listener:", error);
+      console.error("Error menyiapkan listener perubahan editor:", error);
     }
     
     document.addEventListener('selectionchange', handleSelectionChange);
@@ -659,7 +659,7 @@ INSTRUKSI:
   // AI Generation function - FIXED CONTENT MODE
   const generateAIContent = async (prompt: string, type: string = "structure") => {
     if (!aiModel) {
-      alert("❌ AI model tidak tersedia. Silakan periksa konfigurasi API key.");
+      alert("❌ Model AI tidak tersedia. Silakan periksa konfigurasi API key.");
       return null;
     }
     
@@ -706,23 +706,23 @@ KONTEKS TAMBAHAN: ${prompt}`;
       } else {
         if (type === "structure") {
           // Mode Struktur - Generate outline dengan headings
-          systemPrompt = `Buat outline struktur lengkap dengan heading dan subheading untuk topik: ${prompt}
+          systemPrompt = `Buat kerangka struktur lengkap dengan judul dan sub-judul untuk topik: ${prompt}
 
-ATURAN STRUKTUR HEADING:
+ATURAN STRUKTUR JUDUL:
 - Gunakan # untuk judul utama (hanya 1)
 - Gunakan ## untuk bab-bab utama (level 2) 
 - Gunakan ### untuk sub-bab (level 3)
 - Gunakan #### untuk detail bagian (level 4)
-- Jangan skip level heading
+- Jangan skip level judul
 
 INSTRUKSI PENTING:
-- HANYA tulis heading dan subheading
+- HANYA tulis judul dan sub-judul
 - JANGAN tulis konten paragraf apapun
-- TIDAK ada penjelasan atau deskripsi di bawah heading
+- TIDAK ada penjelasan atau deskripsi di bawah judul
 - Fokus pada struktur yang logis dan terorganisir
 
 TUGAS:
-Buat HANYA struktur heading untuk "${prompt}" tanpa konten apapun.`;
+Buat HANYA struktur judul untuk "${prompt}" tanpa konten apapun.`;
 
         } else if (type === "content") {
           // Mode Konten - Generate text paragraf saja tanpa struktur
@@ -730,7 +730,7 @@ Buat HANYA struktur heading untuk "${prompt}" tanpa konten apapun.`;
 
 INSTRUKSI SANGAT PENTING:
 - HANYA tulis dalam bentuk paragraf text biasa
-- JANGAN gunakan heading (#), sub-heading (##), atau format struktur apapun
+- JANGAN gunakan judul (#), sub-judul (##), atau format struktur apapun
 - JANGAN gunakan bullet points (•, -, *) atau numbered list (1., 2., 3.)
 - JANGAN gunakan format markdown apapun
 - Tulis konten yang mengalir dalam bentuk paragraf yang berkesinambungan
@@ -766,7 +766,7 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
       setGeneratedContent(text);
       return text;
     } catch (error) {
-      console.error("AI generation failed:", error);
+      console.error("Generasi AI gagal:", error);
       alert("❌ Gagal menghasilkan konten AI. Silakan coba lagi.");
       return null;
     } finally {
@@ -816,7 +816,7 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
         }, 50);
 
       } catch (error) {
-        console.log("Editor clearing adjustment:", error);
+        console.log("Penyesuaian pembersihan editor:", error);
       }
     }
     
@@ -826,7 +826,7 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
   // Insert content to editor - FIXED WITH PROPER CONTENT CHANGE TRIGGER
   const insertContentToEditor = async (shouldAppend: boolean = false) => {
     if (!generatedContent || !generatedContent.trim()) {
-      console.warn("No generated content to insert");
+      console.warn("Tidak ada konten yang dihasilkan untuk dimasukkan");
       return;
     }
 
@@ -834,7 +834,7 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
       const lines = generatedContent.split('\n').filter((line: string) => line.trim());
       
       if (lines.length === 0) {
-        console.warn("No valid lines to insert");
+        console.warn("Tidak ada baris yang valid untuk dimasukkan");
         return;
       }
       
@@ -893,7 +893,7 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
                 onContentChange(editor.document);
               }
             } catch (e) {
-              console.log("Cursor positioning adjustment:", e);
+              console.log("Penyesuaian posisi kursor:", e);
             }
           }, 100);
         }
@@ -901,7 +901,7 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
       
       closeModalAndReset();
     } catch (error) {
-      console.error("Error inserting content:", error);
+      console.error("Error memasukkan konten:", error);
       alert("❌ Terjadi kesalahan saat memasukkan konten ke editor. Silakan coba lagi.");
     }
   };
@@ -912,26 +912,26 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
     
     return [
       {
-        title: "AI Generator",
+        title: "Generator AI",
         onItemClick: () => {
           setAIMode("new");
           openAIModal();
         },
         aliases: ["generate", "write", "tulis"],
-        group: "AI Tools",
-        subtext: "Generate new content",
+        group: "Alat AI",
+        subtext: "Buat konten baru",
         icon: <IconEdit size={18} />,
       },
       {
-        title: "Ask AI anything...",
+        title: "Tanya AI apa saja...",
         onItemClick: () => {
           setTimeout(() => {
             handleInlineAITrigger();
           }, 100);
         },
         aliases: ["ai", "assistant", "ask", "help"],
-        group: "AI Tools",
-        subtext: "AI suggestions and actions",
+        group: "Alat AI",
+        // subtext: "Saran dan aksi AI",
         icon: <IconSparkles size={18} />,
       }
     ];
@@ -975,7 +975,7 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
     try {
       unsubscribe = editor.onChange?.(handleChange);
     } catch (error) {
-      console.error("Error setting up content change listener:", error);
+      console.error("Error menyiapkan listener perubahan konten:", error);
     }
     
     return () => {
@@ -1058,7 +1058,7 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
                     fontSize: '14px', 
                     fontWeight: 500 
                   }}>
-                    Ask AI anything...
+                    Tanya AI apa saja...
                   </span>
                 </div>
               </div>
@@ -1131,7 +1131,7 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
               pointerEvents: 'auto'
             }}
           >
-            <Tooltip label="Continue writing with AI" position="top">
+            <Tooltip label="Lanjutkan menulis dengan AI" position="top">
               <ActionIcon
                 size="lg"
                 radius="xl"
@@ -1165,7 +1165,7 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
               <Group gap="md">
                 <Loader size="md" color="blue" />
                 <Text fw={500} c="blue">
-                  {isTyping ? 'AI sedang mengetik...' : ' AI sedang berpikir...'}
+                  {isTyping ? 'AI sedang mengetik...' : 'AI sedang berpikir...'}
                 </Text>
               </Group>
             </div>
@@ -1183,7 +1183,7 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
               <IconSparkles size={20} />
             </ThemeIcon>
             <Text fw={700} size="xl">
-              {aiMode === "continue" ? " AI Lanjutan Konten" : " AI Content Generator"}
+              {aiMode === "continue" ? "AI Lanjutan Konten" : "Generator Konten AI"}
             </Text>
           </Group>
         }
@@ -1206,7 +1206,7 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
                     💡 Topik atau Kata Kunci
                   </Text>
                   <Textarea
-                    placeholder="Masukkan topik yang ingin Anda buat - contoh: 'Artificial Intelligence dalam Pendidikan'"
+                    placeholder="Masukkan topik yang ingin Anda buat - contoh: 'Kecerdasan Buatan dalam Pendidikan'"
                     value={prompt}
                     onChange={(event) => setPrompt(event.currentTarget.value)}
                     minRows={3}
@@ -1232,7 +1232,7 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
                       🤖 AI akan otomatis melanjutkan konten yang sudah ada
                     </Text>
                     <Text size="sm" c="blue">
-                      AI akan menganalisis heading/subheading di editor dan melengkapi konten yang masih kosong atau singkat.
+                      AI akan menganalisis judul/sub-judul di editor dan melengkapi konten yang masih kosong atau singkat.
                     </Text>
                   </Stack>
                 </Paper>
@@ -1241,7 +1241,7 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
               {/* AI Templates Grid */}
               <Stack gap="md">
                 <Text fw={500} size="lg" c="dimmed">
-                  Pilih mode generate:
+                  Pilih mode pembuatan:
                 </Text>
                 
                 <SimpleGrid cols={aiMode === "continue" ? 1 : 2} spacing="lg">
@@ -1249,7 +1249,7 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
                     if (aiMode === "continue") {
                       return [{
                         title: "Lanjutkan Konten", 
-                        description: "AI akan melengkapi heading yang masih kosong dengan konten detail",
+                        description: "AI akan melengkapi judul yang masih kosong dengan konten detail",
                         type: "content",
                         color: "green", 
                         icon: IconEdit,
@@ -1318,13 +1318,13 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
                     <IconBulb size={20} style={{ color: '#1976d2', marginTop: 2 }} />
                     <div>
                       <Text fw={600} size="sm" c="blue.8" mb="xs">
-                        💡 Perbedaan Mode Generate:
+                        💡 Perbedaan Mode Pembuatan:
                       </Text>
                       <Text size="xs" c="blue.7" style={{ lineHeight: 1.5 }}>
-                        • <strong>Buat Struktur:</strong> Menghasilkan outline heading/sub-heading saja (ideal untuk planning)<br/>
-                        • <strong>Isi Konten:</strong> Menghasilkan artikel lengkap dalam paragraf text (tanpa heading)<br/>
+                        • <strong>Buat Struktur:</strong> Menghasilkan kerangka judul/sub-judul saja (ideal untuk perencanaan)<br/>
+                        • <strong>Isi Konten:</strong> Menghasilkan artikel lengkap dalam paragraf teks (tanpa judul)<br/>
                         • Gunakan kata kunci yang spesifik untuk hasil yang lebih relevan<br/>
-                        • Anda bisa mengedit hasil generate sebelum memasukkan ke editor
+                        • Anda bisa mengedit hasil pembuatan sebelum memasukkan ke editor
                       </Text>
                     </div>
                   </Group>
@@ -1352,7 +1352,7 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
                       onClick={copy}
                       size="sm"
                     >
-                      {copied ? "Copied!" : "Copy"}
+                      {copied ? "Disalin!" : "Salin"}
                     </Button>
                   )}
                 </CopyButton>
@@ -1411,7 +1411,7 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
                     fontWeight: 600,
                   }}
                 >
-                  Generate Ulang
+                  Buat Ulang
                 </Button>
               </Group>
             </Stack>

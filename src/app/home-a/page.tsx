@@ -33,7 +33,7 @@ function SmartResearchEngineLogo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' })
       <Image
         component={NextImage}
         src={myimage}
-        alt="Smart Research Engine Logo"
+        alt="Logo Smart Research Engine"
         w={config.logoWidth}
         h={config.logoHeight}
         fit="contain"
@@ -69,7 +69,7 @@ function SmartResearchEngineLogo({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' })
               whiteSpace: 'nowrap'
             }}
           >
-            Knowledge Visualization Platform
+            Platform Visualisasi Pengetahuan
           </Text>
         )}
       </div>
@@ -180,7 +180,7 @@ export default function Home() {
                 size="sm" 
                 opened={navbarOpened} 
                 onClick={toggleNavbar} 
-                aria-label="Toggle navigation"
+                aria-label="Buka/tutup navigasi"
                 style={{ flexShrink: 0 }}
               />
 
@@ -200,7 +200,7 @@ export default function Home() {
                 onClick={toggleColorScheme} 
                 variant="default" 
                 size="lg" 
-                aria-label="Toggle color scheme"
+                aria-label="Ubah tema warna"
                 style={{
                   transition: 'all 0.2s ease',
                 }}
@@ -214,7 +214,7 @@ export default function Home() {
               <ActionIcon 
                 variant="default" 
                 size="lg" 
-                aria-label="Settings"
+                aria-label="Pengaturan"
                 style={{
                   transition: 'all 0.2s ease',
                 }}
@@ -226,7 +226,7 @@ export default function Home() {
                 variant="filled" 
                 radius="xl" 
                 color="#007BFF" 
-                alt="User" 
+                alt="Pengguna" 
                 src="" 
                 style={{
                   cursor: 'pointer',
@@ -281,10 +281,10 @@ export default function Home() {
                 {headings.length === 0 ? (
                   <Box ta="center" py="md">
                     <Text size="xs" c="dimmed" mb="xs">
-                      Outline artikel akan muncul di sini
+                      Kerangka artikel akan muncul di sini
                     </Text>
                     <Text size="xs" c="dimmed">
-                      Gunakan AI untuk membuat konten dengan heading
+                      Gunakan AI untuk membuat konten dengan judul
                     </Text>
                   </Box>
                 ) : (
@@ -501,9 +501,9 @@ export default function Home() {
                   }}
                 >
                   {[
-                    { icon: <IconGraph size={20} />, value: 'knowledge', label: 'Knowledge Graph' },
-                    { icon: <IconMessageCircle2 size={20} />, value: 'chat', label: 'Chat' },
-                    { icon: <IconBrain size={20} />, value: 'ask', label: 'AI Assistant' },
+                    { icon: <IconGraph size={20} />, value: 'knowledge', label: 'Graf Pengetahuan' },
+                    { icon: <IconMessageCircle2 size={20} />, value: 'chat', label: 'Obrolan' },
+                    { icon: <IconBrain size={20} />, value: 'ask', label: 'Asisten AI' },
                   ].map((item) => (
                     <ActionIcon
                       key={item.value}
@@ -531,13 +531,13 @@ export default function Home() {
                     <Box style={{ textAlign: 'center', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                       <NextImage 
                         src={knowledgeImage} 
-                        alt="Knowledge Graph" 
+                        alt="Graf Pengetahuan" 
                         width={200} 
                         height={150} 
                         style={{ margin: '0 auto' }} 
                       />
                       <Text size="sm" mt="md" c="dimmed">
-                        Knowledge Graph akan muncul di sini
+                        Graf Pengetahuan akan muncul di sini
                       </Text>
                     </Box>
                   )}
@@ -545,7 +545,7 @@ export default function Home() {
                   {activeTab === 'chat' && (
                     <Box style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                       <Text size="sm" fw={600} mb="md" c="dimmed">
-                        💬 Chat dengan AI
+                        💬 Obrolan dengan AI
                       </Text>
                       <ScrollArea style={{ flex: 1, marginBottom: '10px' }}>
                         <Stack gap="xs">
@@ -560,7 +560,7 @@ export default function Home() {
                             >
                               <IconMessageCircle2 size={32} style={{ margin: '0 auto 8px', color: '#007BFF' }} />
                               <Text size="sm" c="dimmed">
-                                Mulai percakapan dengan AI assistant
+                                Mulai percakapan dengan asisten AI
                               </Text>
                             </Box>
                           ) : (
@@ -628,10 +628,10 @@ export default function Home() {
                         <IconBrain size={48} />
                       </ThemeIcon>
                       <Text fw={600} mb="xs">
-                        🤖 Assistant AI
+                        🤖 Asisten AI
                       </Text>
                       <Text size="sm" c="dimmed" mb="md">
-                        AI Assistant terintegrasi dengan editor untuk membantu menulis konten
+                        Asisten AI terintegrasi dengan editor untuk membantu menulis konten
                       </Text>
                       <Text size="xs" c="dimmed" style={{ fontStyle: 'italic' }}>
                         💡 Gunakan tombol AI di editor atau ketik "/" untuk mengakses fitur AI
