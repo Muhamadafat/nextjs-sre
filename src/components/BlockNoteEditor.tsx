@@ -41,6 +41,7 @@ import {
   IconFileText,
   IconBulb,
   IconPencilPlus,
+  IconRobot,
 } from "@tabler/icons-react";
 import { generateText } from "ai";
 import React from "react";
@@ -1148,29 +1149,6 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
             </Tooltip>
           </div>
         )}
-
-        {/* Simple loading overlay */}
-        {isAutoContinuing && (
-          <Overlay opacity={0.3}>
-            <div style={{ 
-              position: 'absolute', 
-              top: '50%', 
-              left: '50%', 
-              transform: 'translate(-50%, -50%)',
-              background: computedColorScheme === "dark" ? "#2a2a2a" : "white",
-              padding: '20px',
-              borderRadius: '12px',
-              boxShadow: '0 8px 25px rgba(0, 0, 0, 0.15)'
-            }}>
-              <Group gap="md">
-                <Loader size="md" color="blue" />
-                <Text fw={500} c="blue">
-                  {isTyping ? 'AI sedang mengetik...' : 'AI sedang berpikir...'}
-                </Text>
-              </Group>
-            </div>
-          </Overlay>
-        )}
       </div>
 
       {/* AI Modal */}
@@ -1225,18 +1203,21 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
               </Paper>
 
               {/* Info untuk AI Lanjutan */}
-              {aiMode === "continue" && (
-                <Paper p="lg" radius="md" bg="blue.0">
-                  <Stack gap="md">
+                {aiMode === "continue" && (
+              <Paper p="lg" radius="md" bg="blue.0">
+                <Stack gap="md">
+                  <Group gap="xs">
+                    <IconRobot size={20} color="blue" />
                     <Text fw={500} size="md" c="blue">
-                      🤖 AI akan otomatis melanjutkan konten yang sudah ada
+                      AI akan otomatis melanjutkan konten yang sudah ada
                     </Text>
-                    <Text size="sm" c="blue">
-                      AI akan menganalisis judul/sub-judul di editor dan melengkapi konten yang masih kosong atau singkat.
-                    </Text>
-                  </Stack>
-                </Paper>
-              )}
+                  </Group>
+                  <Text size="sm" c="blue">
+                    AI akan menganalisis judul/sub-judul di editor dan melengkapi konten yang masih kosong atau singkat.
+                  </Text>
+                </Stack>
+              </Paper>
+                  )}
 
               {/* AI Templates Grid */}
               <Stack gap="md">
@@ -1318,11 +1299,11 @@ Tulis konten artikel tentang "${prompt}" dalam bentuk paragraf text murni tanpa 
                     <IconBulb size={20} style={{ color: '#1976d2', marginTop: 2 }} />
                     <div>
                       <Text fw={600} size="sm" c="blue.8" mb="xs">
-                        💡 Perbedaan Mode Pembuatan:
+                         Perbedaan Mode Pembuatan:
                       </Text>
                       <Text size="xs" c="blue.7" style={{ lineHeight: 1.5 }}>
-                        • <strong>Buat Struktur:</strong> Menghasilkan kerangka judul/sub-judul saja (ideal untuk perencanaan)<br/>
-                        • <strong>Isi Konten:</strong> Menghasilkan artikel lengkap dalam paragraf teks (tanpa judul)<br/>
+                        • <strong>Buat Struktur:</strong> Untuk Menghasilkan kerangka judul/sub-judul saja (ideal untuk perencanaan)<br/>
+                        • <strong>Isi Konten:</strong> Untuk Menghasilkan artikel lengkap dalam paragraf teks (tanpa judul)<br/>
                         • Gunakan kata kunci yang spesifik untuk hasil yang lebih relevan<br/>
                         • Anda bisa mengedit hasil pembuatan sebelum memasukkan ke editor
                       </Text>
